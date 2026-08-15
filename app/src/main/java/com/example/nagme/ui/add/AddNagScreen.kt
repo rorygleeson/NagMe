@@ -1,0 +1,1060 @@
+package com.example.nagme.ui.add
+
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.nagme.data.RecurrenceType
+import java.text.DateFormat
+import java.util.Calendar
+import java.util.Date
+
+@Composable
+fun AddNagScreen(
+    onSaved: () -> Unit,
+    onCancel: () -> Unit,
+    viewModel: AddNagViewModel = viewModel()
+) {
+
+    val context =
+        LocalContext.current
+
+    var text by remember {
+        mutableStateOf("")
+    }
+
+    var scheduledAt by remember {
+        mutableLongStateOf(
+            System.currentTimeMillis() +
+                    10 * 60_000L
+        )
+    }
+
+    var recurrenceType by remember {
+        mutableStateOf(
+            RecurrenceType.ONCE
+        )
+    }
+
+    var selectedDays by remember {
+        mutableStateOf<Set<Int>>(
+            emptySet()
+        )
+    }
+
+    var nagIntervalMinutes by remember {
+        mutableIntStateOf(10)
+    }
+
+    var stopMode by remember {
+        mutableStateOf(
+            StopMode.UNTIL_DONE
+        )
+    }
+
+    var maxNagCount by remember {
+        mutableIntStateOf(3)
+    }
+
+    var maxDurationMinutes by remember {
+        mutableIntStateOf(60)
+    }
+
+    var errorMessage by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    fun chooseDate() {
+
+        val calendar =
+            Calendar.getInstance().apply {
+                timeInMillis = scheduledAt
+            }
+
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+
+                val updated =
+                    Calendar.getInstance().apply {
+
+                        timeInMillis =
+                            scheduledAt
+
+                        set(
+                            Calendar.YEAR,
+                            year
+                        )
+
+                        set(
+                            Calendar.MONTH,
+                            month
+                        )
+
+                        set(
+                            Calendar.DAY_OF_MONTH,
+                            day
+                        )
+                    }
+
+                scheduledAt =
+                    updated.timeInMillis
+            },
+            calendar.get(
+                Calendar.YEAR
+            ),
+            calendar.get(
+                Calendar.MONTH
+            ),
+            calendar.get(
+                Calendar.DAY_OF_MONTH
+            )
+        ).show()
+    }
+
+    fun chooseTime() {
+
+        val calendar =
+            Calendar.getInstance().apply {
+                timeInMillis =
+                    scheduledAt
+            }
+
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+
+                val updated =
+                    Calendar.getInstance().apply {
+
+                        timeInMillis =
+                            scheduledAt
+
+                        set(
+                            Calendar.HOUR_OF_DAY,
+                            hour
+                        )
+
+                        set(
+                            Calendar.MINUTE,
+                            minute
+                        )
+
+                        set(
+                            Calendar.SECOND,
+                            0
+                        )
+
+                        set(
+                            Calendar.MILLISECOND,
+                            0
+                        )
+                    }
+
+                scheduledAt =
+                    updated.timeInMillis
+            },
+            calendar.get(
+                Calendar.HOUR_OF_DAY
+            ),
+            calendar.get(
+                Calendar.MINUTE
+            ),
+            false
+        ).show()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(NagMeNavy)
+            .verticalScroll(
+                rememberScrollState()
+            )
+            .padding(24.dp)
+    ) {
+
+        Text(
+            text = "Add Nag",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            style =
+                MaterialTheme.typography
+                    .headlineMedium
+        )
+
+        Text(
+            text = "Tell NagMe what needs doing.",
+            color = NagMeMutedText,
+            style =
+                MaterialTheme.typography
+                    .bodyMedium
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(28.dp)
+        )
+
+        SectionTitle(
+            text =
+                "WHAT SHOULD I NAG YOU ABOUT?"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(10.dp)
+        )
+
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                text = it
+                errorMessage = null
+            },
+            modifier =
+                Modifier.fillMaxWidth(),
+            placeholder = {
+                Text(
+                    text =
+                        "e.g. Put the bins out"
+                )
+            },
+            singleLine = true,
+            shape =
+                RoundedCornerShape(16.dp),
+            colors =
+                OutlinedTextFieldDefaults
+                    .colors(
+                        focusedTextColor =
+                            Color.White,
+                        unfocusedTextColor =
+                            Color.White,
+                        focusedBorderColor =
+                            NagMeTeal,
+                        unfocusedBorderColor =
+                            NagMeBorder,
+                        focusedContainerColor =
+                            NagMeField,
+                        unfocusedContainerColor =
+                            NagMeField,
+                        cursorColor =
+                            NagMeTeal,
+                        focusedPlaceholderColor =
+                            NagMeMutedText,
+                        unfocusedPlaceholderColor =
+                            NagMeMutedText
+                    )
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(28.dp)
+        )
+
+        SectionTitle(
+            text = "WHEN"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(10.dp)
+        )
+
+        Text(
+            text =
+                formatScheduledTime(
+                    scheduledAt
+                ),
+            color =
+                Color.White,
+            fontWeight =
+                FontWeight.SemiBold,
+            style =
+                MaterialTheme.typography
+                    .titleMedium
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(12.dp)
+        )
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth(),
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    8.dp
+                )
+        ) {
+
+            SecondaryButton(
+                text = "DATE",
+                modifier =
+                    Modifier.weight(1f),
+                onClick = {
+                    chooseDate()
+                }
+            )
+
+            SecondaryButton(
+                text = "TIME",
+                modifier =
+                    Modifier.weight(1f),
+                onClick = {
+                    chooseTime()
+                }
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(30.dp)
+        )
+
+        SectionTitle(
+            text = "SCHEDULE"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(4.dp)
+        )
+
+        recurrenceOptions().forEach {
+                (type, label) ->
+
+            ChoiceButton(
+                text = label,
+                selected =
+                    recurrenceType ==
+                            type,
+                onClick = {
+                    recurrenceType =
+                        type
+                }
+            )
+        }
+
+        if (
+            recurrenceType ==
+            RecurrenceType.SELECTED_DAYS
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(14.dp)
+            )
+
+            Text(
+                text = "Choose days",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            DayRow(
+                selectedDays =
+                    selectedDays,
+                onToggle = { day ->
+
+                    selectedDays =
+                        if (
+                            day in selectedDays
+                        ) {
+                            selectedDays - day
+                        } else {
+                            selectedDays + day
+                        }
+
+                    errorMessage = null
+                }
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(30.dp)
+        )
+
+        SectionTitle(
+            text = "NAG ME EVERY"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(4.dp)
+        )
+
+        listOf(
+            2,
+            5,
+            10,
+            15,
+            30,
+            60
+        ).forEach { minutes ->
+
+            ChoiceButton(
+                text =
+                    if (
+                        minutes == 60
+                    ) {
+                        "1 hour"
+                    } else {
+                        "$minutes minutes"
+                    },
+                selected =
+                    nagIntervalMinutes ==
+                            minutes,
+                onClick = {
+                    nagIntervalMinutes =
+                        minutes
+                }
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(30.dp)
+        )
+
+        SectionTitle(
+            text = "STOP NAGGING"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(4.dp)
+        )
+
+        ChoiceButton(
+            text =
+                "When I press DONE",
+            selected =
+                stopMode ==
+                        StopMode.UNTIL_DONE,
+            onClick = {
+                stopMode =
+                    StopMode.UNTIL_DONE
+            }
+        )
+
+        ChoiceButton(
+            text =
+                "After a maximum number of nags",
+            selected =
+                stopMode ==
+                        StopMode.MAX_NAGS,
+            onClick = {
+                stopMode =
+                    StopMode.MAX_NAGS
+            }
+        )
+
+        if (
+            stopMode ==
+            StopMode.MAX_NAGS
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(16.dp)
+            )
+
+            Text(
+                text =
+                    "Maximum nags",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold,
+                style =
+                    MaterialTheme.typography
+                        .labelLarge
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "−",
+                    modifier =
+                        Modifier.weight(1f),
+                    enabled =
+                        maxNagCount > 1,
+                    onClick = {
+
+                        if (
+                            maxNagCount > 1
+                        ) {
+                            maxNagCount--
+                        }
+                    }
+                )
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMePurple,
+                                contentColor =
+                                    Color.White
+                            ),
+                    onClick = {
+                    }
+                ) {
+
+                    Text(
+                        text =
+                            maxNagCount
+                                .toString(),
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                SecondaryButton(
+                    text = "+",
+                    modifier =
+                        Modifier.weight(1f),
+                    enabled =
+                        maxNagCount < 99,
+                    onClick = {
+
+                        if (
+                            maxNagCount < 99
+                        ) {
+                            maxNagCount++
+                        }
+                    }
+                )
+            }
+        }
+
+        ChoiceButton(
+            text =
+                "After a maximum duration",
+            selected =
+                stopMode ==
+                        StopMode.MAX_DURATION,
+            onClick = {
+                stopMode =
+                    StopMode.MAX_DURATION
+            }
+        )
+
+        if (
+            stopMode ==
+            StopMode.MAX_DURATION
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp)
+            )
+
+            listOf(
+                5,
+                30,
+                60,
+                120
+            ).forEach { minutes ->
+
+                ChoiceButton(
+                    text =
+                        when (
+                            minutes
+                        ) {
+
+                            60 ->
+                                "1 hour"
+
+                            120 ->
+                                "2 hours"
+
+                            else ->
+                                "$minutes minutes"
+                        },
+                    selected =
+                        maxDurationMinutes ==
+                                minutes,
+                    onClick = {
+                        maxDurationMinutes =
+                            minutes
+                    }
+                )
+            }
+        }
+
+        errorMessage?.let { error ->
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp)
+            )
+
+            Text(
+                text = error,
+                color =
+                    NagMeError,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(36.dp)
+        )
+
+        OutlinedButton(
+            modifier =
+                Modifier.fillMaxWidth(),
+            onClick =
+                onCancel,
+            shape =
+                RoundedCornerShape(
+                    18.dp
+                ),
+            colors =
+                ButtonDefaults
+                    .outlinedButtonColors(
+                        contentColor =
+                            Color.White
+                    )
+        ) {
+
+            Text(
+                text = "CANCEL"
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(10.dp)
+        )
+
+        Button(
+            modifier =
+                Modifier.fillMaxWidth(),
+            shape =
+                RoundedCornerShape(
+                    18.dp
+                ),
+            colors =
+                ButtonDefaults
+                    .buttonColors(
+                        containerColor =
+                            NagMeTeal,
+                        contentColor =
+                            NagMeDarkText
+                    ),
+            onClick = {
+
+                errorMessage = null
+
+                val stopWhenDone =
+                    stopMode ==
+                            StopMode.UNTIL_DONE
+
+                val resolvedMaxNagCount =
+                    if (
+                        stopMode ==
+                        StopMode.MAX_NAGS
+                    ) {
+                        maxNagCount
+                    } else {
+                        null
+                    }
+
+                val resolvedMaxDuration =
+                    if (
+                        stopMode ==
+                        StopMode.MAX_DURATION
+                    ) {
+                        maxDurationMinutes
+                    } else {
+                        null
+                    }
+
+                viewModel.saveNag(
+                    text = text,
+                    scheduledAt =
+                        scheduledAt,
+                    recurrenceType =
+                        recurrenceType,
+                    selectedDays =
+                        selectedDays,
+                    nagIntervalMinutes =
+                        nagIntervalMinutes,
+                    stopWhenDone =
+                        stopWhenDone,
+                    maxNagCount =
+                        resolvedMaxNagCount,
+                    maxNagDurationMinutes =
+                        resolvedMaxDuration,
+                    onSaved =
+                        onSaved,
+                    onError = { error ->
+                        errorMessage =
+                            error
+                    }
+                )
+            }
+        ) {
+
+            Text(
+                text = "SAVE NAG",
+                fontWeight =
+                    FontWeight.Bold
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(16.dp)
+        )
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    text: String
+) {
+
+    Text(
+        text = text,
+        color =
+            NagMeTeal,
+        fontWeight =
+            FontWeight.Bold,
+        style =
+            MaterialTheme.typography
+                .titleMedium
+    )
+}
+
+@Composable
+private fun ChoiceButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+
+    Spacer(
+        modifier =
+            Modifier.height(7.dp)
+    )
+
+    if (
+        selected
+    ) {
+
+        Button(
+            modifier =
+                Modifier.fillMaxWidth(),
+            shape =
+                RoundedCornerShape(
+                    16.dp
+                ),
+            colors =
+                ButtonDefaults
+                    .buttonColors(
+                        containerColor =
+                            NagMeTeal,
+                        contentColor =
+                            NagMeDarkText
+                    ),
+            onClick =
+                onClick
+        ) {
+
+            Text(
+                text =
+                    "✓ $text",
+                fontWeight =
+                    FontWeight.Bold
+            )
+        }
+
+    } else {
+
+        OutlinedButton(
+            modifier =
+                Modifier.fillMaxWidth(),
+            shape =
+                RoundedCornerShape(
+                    16.dp
+                ),
+            colors =
+                ButtonDefaults
+                    .outlinedButtonColors(
+                        contentColor =
+                            NagMeLightText
+                    ),
+            onClick =
+                onClick
+        ) {
+
+            Text(
+                text = text
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayRow(
+    selectedDays: Set<Int>,
+    onToggle: (Int) -> Unit
+) {
+
+    val days =
+        listOf(
+            Calendar.MONDAY to "M",
+            Calendar.TUESDAY to "T",
+            Calendar.WEDNESDAY to "W",
+            Calendar.THURSDAY to "T",
+            Calendar.FRIDAY to "F",
+            Calendar.SATURDAY to "S",
+            Calendar.SUNDAY to "S"
+        )
+
+    Row(
+        modifier =
+            Modifier.fillMaxWidth(),
+        horizontalArrangement =
+            Arrangement.spacedBy(
+                4.dp
+            )
+    ) {
+
+        days.forEach {
+                (day, label) ->
+
+            if (
+                day in selectedDays
+            ) {
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            14.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMeTeal,
+                                contentColor =
+                                    NagMeDarkText
+                            ),
+                    onClick = {
+                        onToggle(day)
+                    }
+                ) {
+
+                    Text(
+                        text = label,
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+            } else {
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            14.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeLightText
+                            ),
+                    onClick = {
+                        onToggle(day)
+                    }
+                ) {
+
+                    Text(label)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecondaryButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+
+    OutlinedButton(
+        modifier =
+            modifier,
+        enabled =
+            enabled,
+        shape =
+            RoundedCornerShape(
+                16.dp
+            ),
+        colors =
+            ButtonDefaults
+                .outlinedButtonColors(
+                    contentColor =
+                        NagMeLightText
+                ),
+        onClick =
+            onClick
+    ) {
+
+        Text(
+            text = text,
+            fontWeight =
+                FontWeight.SemiBold
+        )
+    }
+}
+
+private fun recurrenceOptions():
+        List<Pair<RecurrenceType, String>> {
+
+    return listOf(
+        RecurrenceType.ONCE to
+                "One time only",
+
+        RecurrenceType.DAILY to
+                "Every day",
+
+        RecurrenceType.WEEKDAYS to
+                "Weekdays",
+
+        RecurrenceType.WEEKENDS to
+                "Weekends",
+
+        RecurrenceType.WEEKLY to
+                "Every week",
+
+        RecurrenceType.SELECTED_DAYS to
+                "Choose days"
+    )
+}
+
+private enum class StopMode {
+    UNTIL_DONE,
+    MAX_NAGS,
+    MAX_DURATION
+}
+
+private fun formatScheduledTime(
+    timestamp: Long
+): String {
+
+    return DateFormat
+        .getDateTimeInstance(
+            DateFormat.MEDIUM,
+            DateFormat.SHORT
+        )
+        .format(
+            Date(timestamp)
+        )
+}
+
+/*
+ * NagMe V1 visual palette.
+ *
+ * These values are intentionally local to this screen for now.
+ * We are changing presentation only, not the application's
+ * existing functional theme or Nag logic.
+ */
+private val NagMeNavy =
+    Color(0xFF06101F)
+
+private val NagMeField =
+    Color(0xFF111C32)
+
+private val NagMeBorder =
+    Color(0xFF506078)
+
+private val NagMeTeal =
+    Color(0xFF21D4C2)
+
+private val NagMePurple =
+    Color(0xFF7657C9)
+
+private val NagMeLightText =
+    Color(0xFFD7DFE8)
+
+private val NagMeMutedText =
+    Color(0xFF8995A7)
+
+private val NagMeDarkText =
+    Color(0xFF031218)
+
+private val NagMeError =
+    Color(0xFFFF7A8A)
