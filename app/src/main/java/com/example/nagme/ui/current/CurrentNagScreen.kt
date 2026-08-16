@@ -175,6 +175,26 @@ fun CurrentNagScreen(
                         Alignment.CenterVertically
                 ) {
 
+                    Image(
+                        painter =
+                            painterResource(
+                                id =
+                                    R.drawable
+                                        .nagme_mascot
+                            ),
+                        contentDescription =
+                            "NagMe mascot",
+                        modifier =
+                            Modifier.size(
+                                54.dp
+                            )
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.weight(1f)
+                    )
+
                     OutlinedButton(
                         onClick = onBack,
                         shape =
@@ -191,26 +211,6 @@ fun CurrentNagScreen(
 
                         Text("‹ BACK")
                     }
-
-                    Spacer(
-                        modifier =
-                            Modifier.weight(1f)
-                    )
-
-                    Image(
-                        painter =
-                            painterResource(
-                                id =
-                                    R.drawable
-                                        .nagme_mascot
-                            ),
-                        contentDescription =
-                            "NagMe mascot",
-                        modifier =
-                            Modifier.size(
-                                54.dp
-                            )
-                    )
                 }
 
                 Spacer(
@@ -250,7 +250,41 @@ fun CurrentNagScreen(
 
                 Spacer(
                     modifier =
-                        Modifier.height(24.dp)
+                        Modifier.height(18.dp)
+                )
+
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                NagMeTeal,
+                            contentColor =
+                                NagMeDarkText
+                        ),
+                    onClick = {
+
+                        viewModel.markDone(
+                            onDone = onDone
+                        )
+                    }
+                ) {
+
+                    Text(
+                        text = "✓ DONE",
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(18.dp)
                 )
 
                 Card(
@@ -485,41 +519,6 @@ fun CurrentNagScreen(
                 Spacer(
                     modifier =
                         Modifier.weight(1f)
-                )
-
-                Button(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        RoundedCornerShape(
-                            18.dp
-                        ),
-                    colors =
-                        ButtonDefaults
-                            .buttonColors(
-                                containerColor =
-                                    NagMeTeal,
-                                contentColor =
-                                    NagMeDarkText
-                            ),
-                    onClick = {
-
-                        viewModel.markDone(
-                            onDone = onDone
-                        )
-                    }
-                ) {
-
-                    Text(
-                        text = "✓ DONE",
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-                }
-
-                Spacer(
-                    modifier =
-                        Modifier.height(20.dp)
                 )
 
                 Text(

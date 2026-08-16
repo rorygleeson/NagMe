@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.NagOccurrence
+import com.example.nagme.data.OccurrenceStatus
 import com.example.nagme.data.RoomNagRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -30,16 +31,43 @@ class HistoryViewModel(
             val nagsById =
                 nags.associateBy { it.id }
 
-            occurrences.mapNotNull { occurrence ->
+            occurrences
+                .filter { occurrence ->
 
-                nagsById[occurrence.nagId]?.let { nag ->
+                    when (occurrence.status) {
 
-                    HistoryItem(
-                        nag = nag,
-                        occurrence = occurrence
-                    )
+                        OccurrenceStatus.ACTIVE ->
+                            occurrence.nagCount > 0
+
+                        OccurrenceStatus.DONE,
+                        OccurrenceStatus.EXPIRED,
+                        OccurrenceStatus.MISSED ->
+                            true
+
+                        OccurrenceStatus.SCHEDULED ->
+                            false
+                    }
                 }
-            }
+                .sortedByDescending { occurrence ->
+
+                    listOfNotNull(
+                        occurrence.lastNagAt,
+                        occurrence.completedAt,
+                        occurrence.startedAt,
+                        occurrence.scheduledAt
+                    ).maxOrNull()
+                        ?: occurrence.scheduledAt
+                }
+                .mapNotNull { occurrence ->
+
+                    nagsById[occurrence.nagId]?.let { nag ->
+
+                        HistoryItem(
+                            nag = nag,
+                            occurrence = occurrence
+                        )
+                    }
+                }
         }
             .stateIn(
                 scope = viewModelScope,

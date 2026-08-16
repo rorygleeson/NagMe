@@ -100,7 +100,7 @@ fun HistoryScreen(
 
         Text(
             text =
-                "Your completed and missed Nags.",
+                "Every Nag that has fired.",
             color =
                 NagMeMutedText,
             style =
@@ -157,7 +157,7 @@ fun HistoryScreen(
 
                     Text(
                         text =
-                            "Completed and missed Nags will appear here.",
+                            "Nags will appear here once they have fired.",
                         color =
                             NagMeMutedText
                     )
@@ -444,7 +444,7 @@ private fun historyResultText(
         }
 
         OccurrenceStatus.ACTIVE -> {
-            "Still active"
+            "Still nagging"
         }
 
         OccurrenceStatus.SCHEDULED -> {

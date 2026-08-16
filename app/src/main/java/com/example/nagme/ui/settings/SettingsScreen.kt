@@ -6,6 +6,8 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -81,6 +83,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(NagMeNavy)
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
 
@@ -461,10 +464,6 @@ fun SettingsScreen(
                             settings.showNagNotifications,
                         onCheckedChange = { enabled ->
 
-                            /*
-                             * Existing notification logic preserved
-                             * exactly.
-                             */
                             if (!enabled) {
 
                                 viewModel
@@ -528,7 +527,7 @@ fun SettingsScreen(
 
                 Text(
                     text =
-                        "Missed Nag window",
+                        "Deliver missed Nags for up to",
                     color =
                         Color.White,
                     fontWeight =
