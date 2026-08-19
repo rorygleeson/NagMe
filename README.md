@@ -1,3 +1,6 @@
+see https://getnagme.com
+
+
 # 👹 NagMe
 
 **Other apps remind you. NagMe makes sure you do it.**
