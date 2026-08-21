@@ -1,6 +1,7 @@
 package com.example.nagme.ui.history
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nagme.data.OccurrenceStatus
+import com.example.nagme.data.UtteranceSource
 import java.text.DateFormat
 import java.util.Date
 
@@ -47,6 +50,10 @@ fun HistoryScreen(
 
     var showClearConfirmation by remember {
         mutableStateOf(false)
+    }
+
+    var expandedOccurrenceId by remember {
+        mutableStateOf<Long?>(null)
     }
 
     Column(
@@ -183,8 +190,22 @@ fun HistoryScreen(
                     }
                 ) { item ->
 
+                    val isExpanded =
+                        expandedOccurrenceId ==
+                                item.occurrence.id
+
                     HistoryCard(
-                        item = item
+                        item = item,
+                        isExpanded = isExpanded,
+                        onToggle = {
+
+                            expandedOccurrenceId =
+                                if (isExpanded) {
+                                    null
+                                } else {
+                                    item.occurrence.id
+                                }
+                        }
                     )
                 }
             }
@@ -261,6 +282,9 @@ fun HistoryScreen(
 
                         viewModel.clearHistory()
 
+                        expandedOccurrenceId =
+                            null
+
                         showClearConfirmation =
                             false
                     }
@@ -297,7 +321,9 @@ fun HistoryScreen(
 
 @Composable
 private fun HistoryCard(
-    item: HistoryItem
+    item: HistoryItem,
+    isExpanded: Boolean,
+    onToggle: () -> Unit
 ) {
 
     val nag =
@@ -329,7 +355,11 @@ private fun HistoryCard(
 
     Card(
         modifier =
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClick = onToggle
+                ),
         shape =
             RoundedCornerShape(
                 20.dp
@@ -348,16 +378,37 @@ private fun HistoryCard(
                 )
         ) {
 
-            Text(
-                text = nag.text,
-                color =
-                    Color.White,
-                fontWeight =
-                    FontWeight.SemiBold,
-                style =
-                    MaterialTheme.typography
-                        .titleMedium
-            )
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = nag.text,
+                    color =
+                        Color.White,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium,
+                    modifier =
+                        Modifier.weight(1f)
+                )
+
+                Text(
+                    text =
+                        if (isExpanded) {
+                            "▲"
+                        } else {
+                            "▼"
+                        },
+                    color =
+                        NagMeMutedText
+                )
+            }
 
             Spacer(
                 modifier =
@@ -411,6 +462,118 @@ private fun HistoryCard(
                     MaterialTheme.typography
                         .bodySmall
             )
+
+            if (isExpanded) {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(14.dp)
+                )
+
+                HorizontalDivider(
+                    color =
+                        NagMeMutedText.copy(
+                            alpha = 0.25f
+                        )
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(14.dp)
+                )
+
+                Text(
+                    text = "WHAT NAGME SAID",
+                    color =
+                        NagMeMutedText,
+                    fontWeight =
+                        FontWeight.Bold,
+                    style =
+                        MaterialTheme.typography
+                            .labelMedium
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp)
+                )
+
+                if (
+                    item.utterances.isEmpty()
+                ) {
+
+                    Text(
+                        text =
+                            "No spoken detail was recorded for this occurrence.",
+                        color =
+                            NagMeMutedText,
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall
+                    )
+
+                } else {
+
+                    item.utterances.forEach { utterance ->
+
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text =
+                                    "#${utterance.nagNumber}  ${formatTime(utterance.spokenAt)}",
+                                color =
+                                    NagMeLightText,
+                                fontWeight =
+                                    FontWeight.SemiBold,
+                                style =
+                                    MaterialTheme.typography
+                                        .bodySmall,
+                                modifier =
+                                    Modifier.weight(1f)
+                            )
+
+                            Text(
+                                text =
+                                    utterance.source.name,
+                                color =
+                                    sourceColor(
+                                        utterance.source
+                                    ),
+                                fontWeight =
+                                    FontWeight.Bold,
+                                style =
+                                    MaterialTheme.typography
+                                        .labelSmall
+                            )
+                        }
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(3.dp)
+                        )
+
+                        Text(
+                            text =
+                                utterance.spokenText,
+                            color =
+                                Color.White,
+                            style =
+                                MaterialTheme.typography
+                                    .bodyMedium
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -452,6 +615,21 @@ private fun historyResultText(
         }
     }
 }
+
+private fun sourceColor(
+    source: UtteranceSource
+): Color =
+    when (source) {
+
+        UtteranceSource.ORIGINAL ->
+            NagMeMutedText
+
+        UtteranceSource.AI ->
+            NagMeTeal
+
+        UtteranceSource.FALLBACK ->
+            NagMePurpleLight
+    }
 
 private fun formatTime(
     timestamp: Long

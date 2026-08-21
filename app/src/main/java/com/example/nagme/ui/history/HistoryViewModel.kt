@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.NagOccurrence
+import com.example.nagme.data.NagUtterance
 import com.example.nagme.data.OccurrenceStatus
 import com.example.nagme.data.RoomNagRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,19 +18,31 @@ class HistoryViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
+    private val database =
+        NagDatabase.getInstance(application)
+
     private val repository =
         RoomNagRepository(
-            NagDatabase.getInstance(application)
+            database
         )
+
+    private val utteranceDao =
+        database.nagUtteranceDao()
 
     val history =
         combine(
             repository.observeAllNags(),
-            repository.observeHistory()
-        ) { nags, occurrences ->
+            repository.observeHistory(),
+            utteranceDao.observeAll()
+        ) { nags, occurrences, utterances ->
 
             val nagsById =
                 nags.associateBy { it.id }
+
+            val utterancesByOccurrence =
+                utterances.groupBy {
+                    it.occurrenceId
+                }
 
             occurrences
                 .filter { occurrence ->
@@ -64,7 +77,11 @@ class HistoryViewModel(
 
                         HistoryItem(
                             nag = nag,
-                            occurrence = occurrence
+                            occurrence = occurrence,
+                            utterances =
+                                utterancesByOccurrence[
+                                    occurrence.id
+                                ].orEmpty()
                         )
                     }
                 }
@@ -82,6 +99,11 @@ class HistoryViewModel(
     fun clearHistory() {
 
         viewModelScope.launch {
+
+            // Delete utterance rows belonging to completed history
+            // before deleting their parent occurrence records.
+            utteranceDao.clearCompletedHistory()
+
             repository.clearHistory()
         }
     }
@@ -89,5 +111,6 @@ class HistoryViewModel(
 
 data class HistoryItem(
     val nag: Nag,
-    val occurrence: NagOccurrence
+    val occurrence: NagOccurrence,
+    val utterances: List<NagUtterance>
 )
