@@ -1,6 +1,10 @@
 package com.example.nagme
 
 import android.content.Intent
+import android.app.AlarmManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +46,8 @@ class MainActivity : ComponentActivity() {
         savedInstanceState: Bundle?
     ) {
         super.onCreate(savedInstanceState)
+
+        requestExactAlarmPermissionIfNeeded()
 
         readNotificationIntent(
             intent
@@ -291,6 +297,62 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (
+            Build.VERSION.SDK_INT >=
+            Build.VERSION_CODES.S
+        ) {
+            val alarmManager =
+                getSystemService(
+                    ALARM_SERVICE
+                ) as AlarmManager
+
+            if (
+                alarmManager.canScheduleExactAlarms()
+            ) {
+                rescheduleNagAlarms()
+            }
+        }
+    }
+
+
+
+
+
+    private fun requestExactAlarmPermissionIfNeeded() {
+
+        if (
+            Build.VERSION.SDK_INT <
+            Build.VERSION_CODES.S
+        ) {
+            return
+        }
+
+        val alarmManager =
+            getSystemService(
+                ALARM_SERVICE
+            ) as AlarmManager
+
+        if (
+            alarmManager.canScheduleExactAlarms()
+        ) {
+            return
+        }
+
+        val intent =
+            Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+            ).apply {
+                data =
+                    Uri.parse(
+                        "package:$packageName"
+                    )
+            }
+
+        startActivity(intent)
+    }
     private fun rescheduleNagAlarms() {
 
         lifecycleScope.launch(
