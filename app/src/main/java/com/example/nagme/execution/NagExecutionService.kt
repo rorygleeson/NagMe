@@ -14,7 +14,10 @@ import androidx.core.content.ContextCompat
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.NagOccurrence
+import com.example.nagme.data.NagUtterance
+import com.example.nagme.data.NagUtteranceDao
 import com.example.nagme.data.OccurrenceStatus
+import com.example.nagme.data.UtteranceSource
 import com.example.nagme.data.RoomNagRepository
 import com.example.nagme.logic.NagEngine
 import com.example.nagme.notification.NagNotificationManager
@@ -56,6 +59,9 @@ class NagExecutionService : Service() {
     private lateinit var nagNotificationManager:
             NagNotificationManager
 
+    private lateinit var nagUtteranceDao:
+            NagUtteranceDao
+
     private val speechQueue =
         ArrayDeque<SpeechItem>()
 
@@ -75,6 +81,9 @@ class NagExecutionService : Service() {
             NagDatabase.getInstance(
                 applicationContext
             )
+
+        nagUtteranceDao =
+            database.nagUtteranceDao()
 
         repository =
             RoomNagRepository(
@@ -425,6 +434,40 @@ class NagExecutionService : Service() {
 
                     val spokenAt =
                         System.currentTimeMillis()
+
+                    /*
+                     * Best-effort history write.
+                     *
+                     * A failure here must never interrupt the
+                     * existing V1 Nag execution path.
+                     */
+                    try {
+
+                        nagUtteranceDao.insert(
+                            NagUtterance(
+                                occurrenceId =
+                                    item.occurrence.id,
+                                nagNumber =
+                                    item.occurrence.nagCount + 1,
+                                spokenText =
+                                    item.nag.text,
+                                source =
+                                    UtteranceSource.ORIGINAL,
+                                spokenAt =
+                                    spokenAt
+                            )
+                        )
+
+                    } catch (
+                        utteranceError: Exception
+                    ) {
+
+                        Log.e(
+                            TAG,
+                            "Failed to record Nag utterance history",
+                            utteranceError
+                        )
+                    }
 
                     /*
                      * Re-read the Nag from Room before calculating
