@@ -1,17 +1,21 @@
 package com.example.nagme.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nagme.R
 import com.example.nagme.data.Nag
+import com.example.nagme.data.RecurrenceType
 import java.text.DateFormat
 import java.util.Date
 
@@ -58,21 +63,18 @@ fun HomeScreen(
             .padding(16.dp)
     ) {
 
-        /*
-         * BRAND HEADER
-         *
-         * Visual-only change.
-         * Existing navigation behaviour is untouched.
-         */
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier.fillMaxWidth(),
+            verticalAlignment =
+                Alignment.CenterVertically
         ) {
 
             Image(
                 painter =
                     painterResource(
-                        id = R.drawable.nagme_mascot
+                        id =
+                            R.drawable.nagme_mascot
                     ),
                 contentDescription =
                     "NagMe mascot",
@@ -96,21 +98,26 @@ fun HomeScreen(
                     text = "Nag",
                     color = Color.White,
                     fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight =
+                        FontWeight.Bold
                 )
 
                 Text(
                     text = "Me",
                     color = NagMeTeal,
                     fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight =
+                        FontWeight.Bold
                 )
             }
 
             OutlinedButton(
-                onClick = onSettings,
+                onClick =
+                    onSettings,
                 shape =
-                    RoundedCornerShape(18.dp),
+                    RoundedCornerShape(
+                        18.dp
+                    ),
                 colors =
                     ButtonDefaults
                         .outlinedButtonColors(
@@ -118,6 +125,7 @@ fun HomeScreen(
                                 NagMeTeal
                         )
             ) {
+
                 Text("Settings")
             }
         }
@@ -131,13 +139,16 @@ fun HomeScreen(
             modifier =
                 Modifier.weight(1f),
             verticalArrangement =
-                Arrangement.spacedBy(10.dp)
+                Arrangement.spacedBy(
+                    10.dp
+                )
         ) {
 
             item {
 
                 SectionTitle(
-                    text = "NAGGING NOW"
+                    text =
+                        "NAGGING NOW"
                 )
 
                 Spacer(
@@ -176,9 +187,16 @@ fun HomeScreen(
 
                 ActiveNagCard(
                     item = item,
-                    onClick = {
+                    onEdit = {
+
                         onOpenActiveNag(
                             item.nag.id
+                        )
+                    },
+                    onDone = {
+
+                        viewModel.markDone(
+                            item
                         )
                     }
                 )
@@ -192,7 +210,8 @@ fun HomeScreen(
                 )
 
                 SectionTitle(
-                    text = "UP NEXT"
+                    text =
+                        "UP NEXT"
                 )
 
                 Spacer(
@@ -227,7 +246,8 @@ fun HomeScreen(
 
                 UpcomingNagCard(
                     item = item,
-                    onClick = {
+                    onEdit = {
+
                         onEditUpcomingNag(
                             item.nag.id
                         )
@@ -247,7 +267,8 @@ fun HomeScreen(
                     )
 
                     SectionTitle(
-                        text = "PAUSED"
+                        text =
+                            "PAUSED"
                     )
 
                     Spacer(
@@ -267,6 +288,7 @@ fun HomeScreen(
                     PausedNagCard(
                         nag = nag,
                         onClick = {
+
                             onEditUpcomingNag(
                                 nag.id
                             )
@@ -287,7 +309,9 @@ fun HomeScreen(
             onClick =
                 onHistory,
             shape =
-                RoundedCornerShape(18.dp),
+                RoundedCornerShape(
+                    18.dp
+                ),
             colors =
                 ButtonDefaults
                     .outlinedButtonColors(
@@ -295,8 +319,10 @@ fun HomeScreen(
                             Color.White
                     )
         ) {
+
             Text(
-                text = "History"
+                text =
+                    "History"
             )
         }
 
@@ -311,7 +337,9 @@ fun HomeScreen(
             onClick =
                 onAddNag,
             shape =
-                RoundedCornerShape(18.dp),
+                RoundedCornerShape(
+                    18.dp
+                ),
             colors =
                 ButtonDefaults
                     .buttonColors(
@@ -323,7 +351,8 @@ fun HomeScreen(
         ) {
 
             Text(
-                text = "+ ADD NAG",
+                text =
+                    "+ ADD NAG",
                 fontWeight =
                     FontWeight.Bold
             )
@@ -338,7 +367,8 @@ private fun SectionTitle(
 
     Text(
         text = text,
-        color = NagMeTeal,
+        color =
+            NagMeTeal,
         fontWeight =
             FontWeight.Bold,
         letterSpacing =
@@ -353,17 +383,17 @@ private fun SectionTitle(
 @Composable
 private fun ActiveNagCard(
     item: HomeNagItem,
-    onClick: () -> Unit
+    onEdit: () -> Unit,
+    onDone: () -> Unit
 ) {
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                onClick = onClick
-            ),
+        modifier =
+            Modifier.fillMaxWidth(),
         shape =
-            RoundedCornerShape(20.dp),
+            RoundedCornerShape(
+                20.dp
+            ),
         colors =
             CardDefaults.cardColors(
                 containerColor =
@@ -373,75 +403,239 @@ private fun ActiveNagCard(
 
         Column(
             modifier =
-                Modifier.padding(18.dp)
+                Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp)
         ) {
 
-            Text(
-                text =
-                    "🔊 ${item.nag.text}",
-                color =
-                    Color.White,
-                fontWeight =
-                    FontWeight.Bold,
-                style =
-                    MaterialTheme
-                        .typography
-                        .titleMedium
-            )
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.Top
+            ) {
+
+                Text(
+                    text =
+                        "🔊 ${item.nag.text}",
+                    color =
+                        Color.White,
+                    fontWeight =
+                        FontWeight.Bold,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .titleMedium,
+                    modifier =
+                        Modifier.weight(1f)
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.width(4.dp)
+                )
+
+                OutlinedButton(
+                    modifier =
+                        Modifier
+                            .size(
+                                44.dp
+                            )
+                            .offset(
+                                x = 4.dp,
+                                y = (-5).dp
+                            ),
+                    onClick =
+                        onEdit,
+                    shape =
+                        RoundedCornerShape(
+                            12.dp
+                        ),
+                    contentPadding =
+                        PaddingValues(
+                            0.dp
+                        ),
+                    border =
+                        BorderStroke(
+                            1.dp,
+                            NagMeActiveCard
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeTeal
+                            )
+                ) {
+
+                    Text(
+                        text = "✎",
+                        fontSize = 22.sp,
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+            }
 
             Spacer(
                 modifier =
-                    Modifier.height(7.dp)
+                    Modifier.height(8.dp)
             )
 
-            Text(
-                text =
-                    if (
-                        item.nag.maxNagCount !=
-                        null
-                    ) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.CenterVertically
+            ) {
 
-                        "Nagged ${item.occurrence.nagCount} of ${item.nag.maxNagCount} times"
-
-                    } else {
-
-                        "Nagged ${item.occurrence.nagCount} " +
-                                if (
-                                    item.occurrence.nagCount ==
-                                    1
-                                ) {
-                                    "time"
-                                } else {
-                                    "times"
-                                }
-                    },
-                color =
-                    NagMeLightText
-            )
-
-            item.occurrence
-                .snoozedUntil
-                ?.let {
+                Column(
+                    modifier =
+                        Modifier.weight(1f)
+                ) {
 
                     Text(
                         text =
-                            "Snoozed until ${formatTime(it)}",
+                            if (
+                                item.nag.maxNagCount !=
+                                null
+                            ) {
+
+                                "Nagged ${item.occurrence.nagCount} of ${item.nag.maxNagCount} times"
+
+                            } else {
+
+                                "Nagged ${item.occurrence.nagCount} " +
+                                        if (
+                                            item.occurrence.nagCount ==
+                                            1
+                                        ) {
+                                            "time"
+                                        } else {
+                                            "times"
+                                        }
+                            },
                         color =
-                            NagMePurpleLight
+                            NagMeLightText
                     )
 
-                }
-                ?: item.occurrence
-                    .nextNagAt
-                    ?.let {
+                    item.occurrence
+                        .snoozedUntil
+                        ?.let {
+
+                            Text(
+                                text =
+                                    "Snoozed until ${formatTime(it)}",
+                                color =
+                                    NagMePurpleLight
+                            )
+                        }
+                        ?: item.occurrence
+                            .nextNagAt
+                            ?.let {
+
+                                Text(
+                                    text =
+                                        "Nag #${item.occurrence.nagCount + 1} at ${formatTime(it)}",
+                                    color =
+                                        NagMePurpleLight
+                                )
+                            }
+
+                    recurrenceDisplayText(
+                        item.nag
+                    )?.let { recurrence ->
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp)
+                        )
 
                         Text(
                             text =
-                                "Nag #${item.occurrence.nagCount + 1} at ${formatTime(it)}",
+                                "↻ Repeats $recurrence",
                             color =
-                                NagMePurpleLight
+                                NagMeMutedText,
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .bodySmall
                         )
                     }
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.width(12.dp)
+                )
+
+                Button(
+                    modifier =
+                        Modifier
+                            .width(116.dp)
+                            .height(48.dp),
+                    onClick =
+                        onDone,
+                    shape =
+                        RoundedCornerShape(
+                            14.dp
+                        ),
+                    contentPadding =
+                        PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 0.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMeTeal,
+                                contentColor =
+                                    NagMeDarkText
+                            )
+                ) {
+
+                    Column(
+                        horizontalAlignment =
+                            Alignment.CenterHorizontally,
+                        verticalArrangement =
+                            Arrangement.Center
+                    ) {
+
+                        Text(
+                            text =
+                                "✓ DONE",
+                            modifier =
+                                Modifier.offset(
+                                    y = (-2).dp
+                                ),
+                            fontSize =
+                                14.sp,
+                            fontWeight =
+                                FontWeight.Bold,
+                            lineHeight =
+                                14.sp,
+                            maxLines = 1
+                        )
+
+                        Text(
+                            text =
+                                "stop nagging",
+                            modifier =
+                                Modifier.offset(
+                                    y = 1.dp
+                                ),
+                            fontSize =
+                                10.sp,
+                            fontWeight =
+                                FontWeight.Normal,
+                            lineHeight =
+                                10.sp,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -449,17 +643,16 @@ private fun ActiveNagCard(
 @Composable
 private fun UpcomingNagCard(
     item: HomeNagItem,
-    onClick: () -> Unit
+    onEdit: () -> Unit
 ) {
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                onClick = onClick
-            ),
+        modifier =
+            Modifier.fillMaxWidth(),
         shape =
-            RoundedCornerShape(20.dp),
+            RoundedCornerShape(
+                20.dp
+            ),
         colors =
             CardDefaults.cardColors(
                 containerColor =
@@ -470,25 +663,85 @@ private fun UpcomingNagCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(
+                    18.dp
+                )
         ) {
 
-            Text(
-                text =
-                    item.nag.text,
-                color =
-                    Color.White,
-                fontWeight =
-                    FontWeight.SemiBold,
-                style =
-                    MaterialTheme
-                        .typography
-                        .titleMedium
-            )
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    Alignment.Top
+            ) {
+
+                Text(
+                    text =
+                        item.nag.text,
+                    color =
+                        Color.White,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .titleMedium,
+                    modifier =
+                        Modifier.weight(1f)
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.width(4.dp)
+                )
+
+                OutlinedButton(
+                    modifier =
+                        Modifier
+                            .size(
+                                44.dp
+                            )
+                            .offset(
+                                x = 4.dp,
+                                y = (-5).dp
+                            ),
+                    onClick =
+                        onEdit,
+                    shape =
+                        RoundedCornerShape(
+                            12.dp
+                        ),
+                    contentPadding =
+                        PaddingValues(
+                            0.dp
+                        ),
+                    border =
+                        BorderStroke(
+                            1.dp,
+                            NagMeUpcomingCard
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeTeal
+                            )
+                ) {
+
+                    Text(
+                        text = "✎",
+                        fontSize = 22.sp,
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+            }
 
             Spacer(
                 modifier =
-                    Modifier.height(6.dp)
+                    Modifier.height(
+                        6.dp
+                    )
             )
 
             Text(
@@ -503,7 +756,9 @@ private fun UpcomingNagCard(
 
             Spacer(
                 modifier =
-                    Modifier.height(2.dp)
+                    Modifier.height(
+                        2.dp
+                    )
             )
 
             Text(
@@ -514,6 +769,27 @@ private fun UpcomingNagCard(
                 color =
                     NagMeTeal
             )
+
+            recurrenceDisplayText(
+                item.nag
+            )?.let { recurrence ->
+
+                Spacer(
+                    modifier =
+                        Modifier.height(6.dp)
+                )
+
+                Text(
+                    text =
+                        "↻ Repeats $recurrence",
+                    color =
+                        NagMeMutedText,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .bodySmall
+                )
+            }
         }
     }
 }
@@ -528,10 +804,13 @@ private fun PausedNagCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
-                onClick = onClick
+                onClick =
+                    onClick
             ),
         shape =
-            RoundedCornerShape(20.dp),
+            RoundedCornerShape(
+                20.dp
+            ),
         colors =
             CardDefaults.cardColors(
                 containerColor =
@@ -542,7 +821,9 @@ private fun PausedNagCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(
+                    18.dp
+                )
         ) {
 
             Text(
@@ -560,11 +841,14 @@ private fun PausedNagCard(
 
             Spacer(
                 modifier =
-                    Modifier.height(5.dp)
+                    Modifier.height(
+                        5.dp
+                    )
             )
 
             Text(
-                text = "Paused",
+                text =
+                    "Paused",
                 color =
                     NagMePurpleLight
             )
@@ -583,10 +867,140 @@ private fun PausedNagCard(
     }
 }
 
-/*
- * EVERYTHING BELOW HERE IS THE SAME
- * BEHAVIOURAL LOGIC AS BEFORE.
- */
+private fun recurrenceDisplayText(
+    nag: Nag
+): String? {
+
+    return when (
+        nag.recurrenceType
+    ) {
+
+        RecurrenceType.ONCE ->
+            null
+
+        RecurrenceType.DAILY ->
+            "Daily"
+
+        RecurrenceType.WEEKDAYS ->
+            "Weekdays"
+
+        RecurrenceType.WEEKENDS ->
+            "Weekends"
+
+        RecurrenceType.WEEKLY ->
+            "Weekly"
+
+        RecurrenceType.SELECTED_DAYS -> {
+
+            val orderedDays =
+                listOf(
+                    2 to "Mon",
+                    3 to "Tue",
+                    4 to "Wed",
+                    5 to "Thu",
+                    6 to "Fri",
+                    7 to "Sat",
+                    1 to "Sun"
+                )
+
+            orderedDays
+                .filter { (day, _) ->
+                    day in nag.selectedDays
+                }
+                .joinToString(
+                    separator = ", "
+                ) { (_, label) ->
+                    label
+                }
+        }
+
+        RecurrenceType.DURING_TIME_PERIOD -> {
+
+            val interval =
+                nag.timePeriodIntervalMinutes
+                    ?: return null
+
+            val endMinutes =
+                nag.timePeriodEndMinutesOfDay
+                    ?: return null
+
+            val startDate =
+                java.util.Calendar
+                    .getInstance()
+                    .apply {
+                        timeInMillis =
+                            nag.startDateTime
+                    }
+
+            val startMinutes =
+                startDate.get(
+                    java.util.Calendar.HOUR_OF_DAY
+                ) * 60 +
+                        startDate.get(
+                            java.util.Calendar.MINUTE
+                        )
+
+            val orderedDays =
+                listOf(
+                    2 to "Mon",
+                    3 to "Tue",
+                    4 to "Wed",
+                    5 to "Thu",
+                    6 to "Fri",
+                    7 to "Sat",
+                    1 to "Sun"
+                )
+
+            val daysText =
+                orderedDays
+                    .filter { (day, _) ->
+                        day in nag.selectedDays
+                    }
+                    .joinToString(
+                        separator = ", "
+                    ) { (_, label) ->
+                        label
+                    }
+
+            val intervalText =
+                when {
+                    interval < 60 ->
+                        "$interval min"
+
+                    interval % 60 == 0 -> {
+                        val hours =
+                            interval / 60
+
+                        if (hours == 1) {
+                            "1 hour"
+                        } else {
+                            "$hours hours"
+                        }
+                    }
+
+                    else -> {
+                        val hours =
+                            interval / 60
+                        val minutes =
+                            interval % 60
+
+                        "${hours}h ${minutes}m"
+                    }
+                }
+
+            val periodText =
+                "$intervalText • " +
+                        "${formatMinutesOfDay(startMinutes)}–" +
+                        formatMinutesOfDay(endMinutes)
+
+            if (daysText.isBlank()) {
+                periodText
+            } else {
+                "$periodText • $daysText"
+            }
+        }
+    }
+}
 
 private fun nagBehaviourText(
     nag: Nag
@@ -629,6 +1043,45 @@ private fun nagBehaviourText(
     }
 }
 
+private fun formatMinutesOfDay(
+    minutesOfDay: Int
+): String {
+
+    val calendar =
+        java.util.Calendar
+            .getInstance()
+            .apply {
+
+                set(
+                    java.util.Calendar.HOUR_OF_DAY,
+                    minutesOfDay / 60
+                )
+
+                set(
+                    java.util.Calendar.MINUTE,
+                    minutesOfDay % 60
+                )
+
+                set(
+                    java.util.Calendar.SECOND,
+                    0
+                )
+
+                set(
+                    java.util.Calendar.MILLISECOND,
+                    0
+                )
+            }
+
+    return DateFormat
+        .getTimeInstance(
+            DateFormat.SHORT
+        )
+        .format(
+            calendar.time
+        )
+}
+
 private fun formatTime(
     timestamp: Long
 ): String =
@@ -652,13 +1105,6 @@ private fun formatDateTime(
             Date(timestamp)
         )
 
-/*
- * NagMe V1 visual palette.
- *
- * These colours live only in this UI file for now so we
- * don't disturb the existing application theme while we
- * experiment with the new branding.
- */
 private val NagMeNavy =
     Color(0xFF06101F)
 

@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nagme.R
+import com.example.nagme.data.Nag
+import com.example.nagme.data.RecurrenceType
 import java.text.DateFormat
 import java.util.Date
 
@@ -41,6 +43,7 @@ fun CurrentNagScreen(
     nagId: Long,
     onBack: () -> Unit,
     onDone: () -> Unit,
+    showDoneButton: Boolean = false,
     viewModel: CurrentNagViewModel = viewModel()
 ) {
 
@@ -232,60 +235,67 @@ fun CurrentNagScreen(
                             .labelLarge
                 )
 
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp)
-                )
-
-                Text(
-                    text = nag.text,
-                    color =
-                        Color.White,
-                    fontWeight =
-                        FontWeight.Bold,
-                    style =
-                        MaterialTheme.typography
-                            .headlineMedium
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(18.dp)
-                )
-
-                Button(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        RoundedCornerShape(
-                            16.dp
-                        ),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor =
-                                NagMeTeal,
-                            contentColor =
-                                NagMeDarkText
-                        ),
-                    onClick = {
-
-                        viewModel.markDone(
-                            onDone = onDone
-                        )
-                    }
+                if (
+                    showDoneButton
                 ) {
 
-                    Text(
-                        text = "✓ DONE",
-                        fontWeight =
-                            FontWeight.Bold
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp)
+                    )
+
+                    Button(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        onClick = {
+
+                            viewModel.markDone(
+                                onDone =
+                                    onDone
+                            )
+                        },
+                        shape =
+                            RoundedCornerShape(
+                                16.dp
+                            ),
+                        colors =
+                            ButtonDefaults
+                                .buttonColors(
+                                    containerColor =
+                                        NagMeTeal,
+                                    contentColor =
+                                        NagMeDarkText
+                                )
+                    ) {
+
+                        Column(
+                            horizontalAlignment =
+                                Alignment.CenterHorizontally
+                        ) {
+
+                            Text(
+                                text =
+                                    "✓ DONE",
+                                fontWeight =
+                                    FontWeight.Bold
+                            )
+
+                            Text(
+                                text =
+                                    "stop nagging",
+                                fontSize =
+                                    10.sp,
+                                fontWeight =
+                                    FontWeight.Normal
+                            )
+                        }
+                    }
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp)
                     )
                 }
-
-                Spacer(
-                    modifier =
-                        Modifier.height(18.dp)
-                )
 
                 Card(
                     modifier =
@@ -408,6 +418,136 @@ fun CurrentNagScreen(
                                     FontWeight.SemiBold
                             )
                         }
+
+                        recurrenceDisplayText(
+                            nag
+                        )?.let { recurrence ->
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(18.dp)
+                            )
+
+                            InfoLabel(
+                                text =
+                                    "REPEATS"
+                            )
+
+                            Text(
+                                text =
+                                    recurrence,
+                                color =
+                                    Color.White,
+                                fontWeight =
+                                    FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                if (
+                    nag.nagIntervalMinutes != null
+                ) {
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(20.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Nag every",
+                        color =
+                            NagMeLightText,
+                        fontWeight =
+                            FontWeight.SemiBold,
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(10.dp)
+                    )
+
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                8.dp
+                            )
+                    ) {
+
+                        SecondaryButton(
+                            text = "−",
+                            modifier =
+                                Modifier.weight(1f),
+                            enabled =
+                                nag.nagIntervalMinutes > 1,
+                            onClick = {
+
+                                viewModel
+                                    .updateNagIntervalMinutes(
+                                        newIntervalMinutes =
+                                            nag.nagIntervalMinutes - 1,
+                                        onStopped =
+                                            onBack
+                                    )
+                            }
+                        )
+
+                        Button(
+                            modifier =
+                                Modifier.weight(1f),
+                            shape =
+                                RoundedCornerShape(
+                                    16.dp
+                                ),
+                            colors =
+                                ButtonDefaults
+                                    .buttonColors(
+                                        containerColor =
+                                            NagMePurple,
+                                        contentColor =
+                                            Color.White
+                                    ),
+                            onClick = {
+                            }
+                        ) {
+
+                            Text(
+                                text =
+                                    if (
+                                        nag.nagIntervalMinutes == 1
+                                    ) {
+                                        "1 min"
+                                    } else {
+                                        "${nag.nagIntervalMinutes} min"
+                                    },
+                                fontWeight =
+                                    FontWeight.Bold
+                            )
+                        }
+
+                        SecondaryButton(
+                            text = "+",
+                            modifier =
+                                Modifier.weight(1f),
+                            enabled =
+                                nag.nagIntervalMinutes < 1440,
+                            onClick = {
+
+                                viewModel
+                                    .updateNagIntervalMinutes(
+                                        newIntervalMinutes =
+                                            nag.nagIntervalMinutes + 1,
+                                        onStopped =
+                                            onBack
+                                    )
+                            }
+                        )
                     }
                 }
 
@@ -518,7 +658,7 @@ fun CurrentNagScreen(
 
                 Spacer(
                     modifier =
-                        Modifier.weight(1f)
+                        Modifier.height(12.dp)
                 )
 
                 Text(
@@ -718,6 +858,188 @@ private fun SecondaryButton(
     }
 }
 
+private fun recurrenceDisplayText(
+    nag: Nag
+): String? {
+
+    return when (
+        nag.recurrenceType
+    ) {
+
+        RecurrenceType.ONCE ->
+            null
+
+        RecurrenceType.DAILY ->
+            "Daily"
+
+        RecurrenceType.WEEKDAYS ->
+            "Weekdays"
+
+        RecurrenceType.WEEKENDS ->
+            "Weekends"
+
+        RecurrenceType.WEEKLY ->
+            "Weekly"
+
+        RecurrenceType.SELECTED_DAYS -> {
+
+            val orderedDays =
+                listOf(
+                    2 to "Mon",
+                    3 to "Tue",
+                    4 to "Wed",
+                    5 to "Thu",
+                    6 to "Fri",
+                    7 to "Sat",
+                    1 to "Sun"
+                )
+
+            orderedDays
+                .filter { (day, _) ->
+                    day in nag.selectedDays
+                }
+                .joinToString(
+                    separator = ", "
+                ) { (_, label) ->
+                    label
+                }
+        }
+
+        RecurrenceType.DURING_TIME_PERIOD -> {
+
+            val interval =
+                nag.timePeriodIntervalMinutes
+                    ?: return null
+
+            val endMinutes =
+                nag.timePeriodEndMinutesOfDay
+                    ?: return null
+
+            val startCalendar =
+                java.util.Calendar
+                    .getInstance()
+                    .apply {
+                        timeInMillis =
+                            nag.startDateTime
+                    }
+
+            val startMinutes =
+                startCalendar.get(
+                    java.util.Calendar.HOUR_OF_DAY
+                ) * 60 +
+                        startCalendar.get(
+                            java.util.Calendar.MINUTE
+                        )
+
+            val orderedDays =
+                listOf(
+                    2 to "Mon",
+                    3 to "Tue",
+                    4 to "Wed",
+                    5 to "Thu",
+                    6 to "Fri",
+                    7 to "Sat",
+                    1 to "Sun"
+                )
+
+            val daysText =
+                orderedDays
+                    .filter { (day, _) ->
+                        day in nag.selectedDays
+                    }
+                    .joinToString(
+                        separator = ", "
+                    ) { (_, label) ->
+                        label
+                    }
+
+            val intervalText =
+                when {
+
+                    interval < 60 ->
+                        "$interval min"
+
+                    interval % 60 == 0 -> {
+
+                        val hours =
+                            interval / 60
+
+                        if (
+                            hours == 1
+                        ) {
+                            "1 hour"
+                        } else {
+                            "$hours hours"
+                        }
+                    }
+
+                    else -> {
+
+                        val hours =
+                            interval / 60
+
+                        val minutes =
+                            interval % 60
+
+                        "${hours}h ${minutes}m"
+                    }
+                }
+
+            val periodText =
+                "$intervalText • " +
+                        "${formatMinutesOfDay(startMinutes)}–" +
+                        formatMinutesOfDay(endMinutes)
+
+            if (
+                daysText.isBlank()
+            ) {
+                periodText
+            } else {
+                "$periodText • $daysText"
+            }
+        }
+    }
+}
+
+private fun formatMinutesOfDay(
+    minutesOfDay: Int
+): String {
+
+    val calendar =
+        java.util.Calendar
+            .getInstance()
+            .apply {
+
+                set(
+                    java.util.Calendar.HOUR_OF_DAY,
+                    minutesOfDay / 60
+                )
+
+                set(
+                    java.util.Calendar.MINUTE,
+                    minutesOfDay % 60
+                )
+
+                set(
+                    java.util.Calendar.SECOND,
+                    0
+                )
+
+                set(
+                    java.util.Calendar.MILLISECOND,
+                    0
+                )
+            }
+
+    return DateFormat
+        .getTimeInstance(
+            DateFormat.SHORT
+        )
+        .format(
+            calendar.time
+        )
+}
+
 private fun formatTime(
     timestamp: Long
 ): String {
@@ -731,9 +1053,6 @@ private fun formatTime(
         )
 }
 
-/*
- * Cosmetic-only NagMe V1 palette.
- */
 private val NagMeNavy =
     Color(0xFF06101F)
 

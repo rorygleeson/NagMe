@@ -72,6 +72,28 @@ fun AddNagScreen(
         )
     }
 
+    /*
+     * Only used for DURING_TIME_PERIOD.
+     *
+     * Example:
+     * 60 = create a new occurrence every hour.
+     */
+    var timePeriodIntervalMinutes by remember {
+        mutableIntStateOf(60)
+    }
+
+    /*
+     * Only used for DURING_TIME_PERIOD.
+     *
+     * Stored as minutes since midnight.
+     * Default = 5:00 pm.
+     */
+    var timePeriodEndMinutesOfDay by remember {
+        mutableIntStateOf(
+            17 * 60
+        )
+    }
+
     var nagIntervalMinutes by remember {
         mutableIntStateOf(10)
     }
@@ -98,7 +120,8 @@ fun AddNagScreen(
 
         val calendar =
             Calendar.getInstance().apply {
-                timeInMillis = scheduledAt
+                timeInMillis =
+                    scheduledAt
             }
 
         DatePickerDialog(
@@ -194,36 +217,72 @@ fun AddNagScreen(
         ).show()
     }
 
+    fun chooseTimePeriodEnd() {
+
+        val initialHour =
+            timePeriodEndMinutesOfDay / 60
+
+        val initialMinute =
+            timePeriodEndMinutesOfDay % 60
+
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+
+                timePeriodEndMinutesOfDay =
+                    hour * 60 + minute
+
+                errorMessage = null
+            },
+            initialHour,
+            initialMinute,
+            false
+        ).show()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(NagMeNavy)
+            .background(
+                NagMeNavy
+            )
             .verticalScroll(
                 rememberScrollState()
             )
-            .padding(24.dp)
+            .padding(
+                24.dp
+            )
     ) {
 
         Text(
-            text = "Add Nag",
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
+            text =
+                "Add Nag",
+            color =
+                Color.White,
+            fontWeight =
+                FontWeight.Bold,
             style =
-                MaterialTheme.typography
+                MaterialTheme
+                    .typography
                     .headlineMedium
         )
 
         Text(
-            text = "Tell NagMe what needs doing.",
-            color = NagMeMutedText,
+            text =
+                "Tell NagMe what needs doing.",
+            color =
+                NagMeMutedText,
             style =
-                MaterialTheme.typography
+                MaterialTheme
+                    .typography
                     .bodyMedium
         )
 
         Spacer(
             modifier =
-                Modifier.height(28.dp)
+                Modifier.height(
+                    28.dp
+                )
         )
 
         SectionTitle(
@@ -233,26 +292,37 @@ fun AddNagScreen(
 
         Spacer(
             modifier =
-                Modifier.height(10.dp)
+                Modifier.height(
+                    10.dp
+                )
         )
 
         OutlinedTextField(
-            value = text,
+            value =
+                text,
             onValueChange = {
-                text = it
-                errorMessage = null
+
+                text =
+                    it
+
+                errorMessage =
+                    null
             },
             modifier =
                 Modifier.fillMaxWidth(),
             placeholder = {
+
                 Text(
                     text =
                         "e.g. Put the bins out"
                 )
             },
-            singleLine = true,
+            singleLine =
+                true,
             shape =
-                RoundedCornerShape(16.dp),
+                RoundedCornerShape(
+                    16.dp
+                ),
             colors =
                 OutlinedTextFieldDefaults
                     .colors(
@@ -279,16 +349,28 @@ fun AddNagScreen(
 
         Spacer(
             modifier =
-                Modifier.height(28.dp)
+                Modifier.height(
+                    28.dp
+                )
         )
 
         SectionTitle(
-            text = "WHEN"
+            text =
+                if (
+                    recurrenceType ==
+                    RecurrenceType.DURING_TIME_PERIOD
+                ) {
+                    "STARTING / FROM"
+                } else {
+                    "WHEN"
+                }
         )
 
         Spacer(
             modifier =
-                Modifier.height(10.dp)
+                Modifier.height(
+                    10.dp
+                )
         )
 
         Text(
@@ -301,13 +383,16 @@ fun AddNagScreen(
             fontWeight =
                 FontWeight.SemiBold,
             style =
-                MaterialTheme.typography
+                MaterialTheme
+                    .typography
                     .titleMedium
         )
 
         Spacer(
             modifier =
-                Modifier.height(12.dp)
+                Modifier.height(
+                    12.dp
+                )
         )
 
         Row(
@@ -320,7 +405,8 @@ fun AddNagScreen(
         ) {
 
             SecondaryButton(
-                text = "DATE",
+                text =
+                    "DATE",
                 modifier =
                     Modifier.weight(1f),
                 onClick = {
@@ -329,7 +415,8 @@ fun AddNagScreen(
             )
 
             SecondaryButton(
-                text = "TIME",
+                text =
+                    "TIME",
                 modifier =
                     Modifier.weight(1f),
                 onClick = {
@@ -340,32 +427,43 @@ fun AddNagScreen(
 
         Spacer(
             modifier =
-                Modifier.height(30.dp)
+                Modifier.height(
+                    30.dp
+                )
         )
 
         SectionTitle(
-            text = "SCHEDULE"
+            text =
+                "SCHEDULE"
         )
 
         Spacer(
             modifier =
-                Modifier.height(4.dp)
+                Modifier.height(
+                    4.dp
+                )
         )
 
-        recurrenceOptions().forEach {
-                (type, label) ->
+        recurrenceOptions()
+            .forEach {
+                    (type, label) ->
 
-            ChoiceButton(
-                text = label,
-                selected =
-                    recurrenceType ==
-                            type,
-                onClick = {
-                    recurrenceType =
-                        type
-                }
-            )
-        }
+                ChoiceButton(
+                    text =
+                        label,
+                    selected =
+                        recurrenceType ==
+                                type,
+                    onClick = {
+
+                        recurrenceType =
+                            type
+
+                        errorMessage =
+                            null
+                    }
+                )
+            }
 
         if (
             recurrenceType ==
@@ -374,11 +472,14 @@ fun AddNagScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(14.dp)
+                    Modifier.height(
+                        14.dp
+                    )
             )
 
             Text(
-                text = "Choose days",
+                text =
+                    "Choose days",
                 color =
                     NagMeLightText,
                 fontWeight =
@@ -387,7 +488,9 @@ fun AddNagScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(10.dp)
+                    Modifier.height(
+                        10.dp
+                    )
             )
 
             DayRow(
@@ -397,30 +500,251 @@ fun AddNagScreen(
 
                     selectedDays =
                         if (
-                            day in selectedDays
+                            day in
+                            selectedDays
                         ) {
-                            selectedDays - day
+
+                            selectedDays -
+                                    day
+
                         } else {
-                            selectedDays + day
+
+                            selectedDays +
+                                    day
                         }
 
-                    errorMessage = null
+                    errorMessage =
+                        null
+                }
+            )
+        }
+
+        if (
+            recurrenceType ==
+            RecurrenceType.DURING_TIME_PERIOD
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        20.dp
+                    )
+            )
+
+            Text(
+                text =
+                    "Every",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        10.dp
+                    )
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text =
+                        "−",
+                    modifier =
+                        Modifier.weight(1f),
+                    enabled =
+                        timePeriodIntervalMinutes >
+                                15,
+                    onClick = {
+
+                        timePeriodIntervalMinutes =
+                            maxOf(
+                                15,
+                                timePeriodIntervalMinutes -
+                                        15
+                            )
+                    }
+                )
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMePurple,
+                                contentColor =
+                                    Color.White
+                            ),
+                    onClick = {
+                    }
+                ) {
+
+                    Text(
+                        text =
+                            formatInterval(
+                                timePeriodIntervalMinutes
+                            ),
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                SecondaryButton(
+                    text =
+                        "+",
+                    modifier =
+                        Modifier.weight(1f),
+                    enabled =
+                        timePeriodIntervalMinutes <
+                                720,
+                    onClick = {
+
+                        timePeriodIntervalMinutes =
+                            minOf(
+                                720,
+                                timePeriodIntervalMinutes +
+                                        15
+                            )
+                    }
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        20.dp
+                    )
+            )
+
+            Text(
+                text =
+                    "Until",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        10.dp
+                    )
+            )
+
+            Text(
+                text =
+                    formatMinutesOfDay(
+                        timePeriodEndMinutesOfDay
+                    ),
+                color =
+                    Color.White,
+                fontWeight =
+                    FontWeight.SemiBold,
+                style =
+                    MaterialTheme
+                        .typography
+                        .titleMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        10.dp
+                    )
+            )
+
+            SecondaryButton(
+                text =
+                    "END TIME",
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick = {
+                    chooseTimePeriodEnd()
+                }
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        20.dp
+                    )
+            )
+
+            Text(
+                text =
+                    "Days",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        10.dp
+                    )
+            )
+
+            DayRow(
+                selectedDays =
+                    selectedDays,
+                onToggle = { day ->
+
+                    selectedDays =
+                        if (
+                            day in
+                            selectedDays
+                        ) {
+
+                            selectedDays -
+                                    day
+
+                        } else {
+
+                            selectedDays +
+                                    day
+                        }
+
+                    errorMessage =
+                        null
                 }
             )
         }
 
         Spacer(
             modifier =
-                Modifier.height(30.dp)
+                Modifier.height(
+                    30.dp
+                )
         )
 
         SectionTitle(
-            text = "NAG ME EVERY"
+            text =
+                "NAG ME EVERY"
         )
 
         Spacer(
             modifier =
-                Modifier.height(4.dp)
+                Modifier.height(
+                    4.dp
+                )
         )
 
         listOf(
@@ -435,7 +759,8 @@ fun AddNagScreen(
             ChoiceButton(
                 text =
                     if (
-                        minutes == 60
+                        minutes ==
+                        60
                     ) {
                         "1 hour"
                     } else {
@@ -445,6 +770,7 @@ fun AddNagScreen(
                     nagIntervalMinutes ==
                             minutes,
                 onClick = {
+
                     nagIntervalMinutes =
                         minutes
                 }
@@ -453,16 +779,21 @@ fun AddNagScreen(
 
         Spacer(
             modifier =
-                Modifier.height(30.dp)
+                Modifier.height(
+                    30.dp
+                )
         )
 
         SectionTitle(
-            text = "STOP NAGGING"
+            text =
+                "STOP NAGGING"
         )
 
         Spacer(
             modifier =
-                Modifier.height(4.dp)
+                Modifier.height(
+                    4.dp
+                )
         )
 
         ChoiceButton(
@@ -472,6 +803,7 @@ fun AddNagScreen(
                 stopMode ==
                         StopMode.UNTIL_DONE,
             onClick = {
+
                 stopMode =
                     StopMode.UNTIL_DONE
             }
@@ -484,6 +816,7 @@ fun AddNagScreen(
                 stopMode ==
                         StopMode.MAX_NAGS,
             onClick = {
+
                 stopMode =
                     StopMode.MAX_NAGS
             }
@@ -496,7 +829,9 @@ fun AddNagScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(16.dp)
+                    Modifier.height(
+                        16.dp
+                    )
             )
 
             Text(
@@ -507,13 +842,16 @@ fun AddNagScreen(
                 fontWeight =
                     FontWeight.SemiBold,
                 style =
-                    MaterialTheme.typography
+                    MaterialTheme
+                        .typography
                         .labelLarge
             )
 
             Spacer(
                 modifier =
-                    Modifier.height(10.dp)
+                    Modifier.height(
+                        10.dp
+                    )
             )
 
             Row(
@@ -526,7 +864,8 @@ fun AddNagScreen(
             ) {
 
                 SecondaryButton(
-                    text = "−",
+                    text =
+                        "−",
                     modifier =
                         Modifier.weight(1f),
                     enabled =
@@ -570,7 +909,8 @@ fun AddNagScreen(
                 }
 
                 SecondaryButton(
-                    text = "+",
+                    text =
+                        "+",
                     modifier =
                         Modifier.weight(1f),
                     enabled =
@@ -594,6 +934,7 @@ fun AddNagScreen(
                 stopMode ==
                         StopMode.MAX_DURATION,
             onClick = {
+
                 stopMode =
                     StopMode.MAX_DURATION
             }
@@ -606,7 +947,9 @@ fun AddNagScreen(
 
             Spacer(
                 modifier =
-                    Modifier.height(6.dp)
+                    Modifier.height(
+                        6.dp
+                    )
             )
 
             listOf(
@@ -635,6 +978,7 @@ fun AddNagScreen(
                         maxDurationMinutes ==
                                 minutes,
                     onClick = {
+
                         maxDurationMinutes =
                             minutes
                     }
@@ -642,25 +986,31 @@ fun AddNagScreen(
             }
         }
 
-        errorMessage?.let { error ->
+        errorMessage
+            ?.let { error ->
 
-            Spacer(
-                modifier =
-                    Modifier.height(20.dp)
-            )
+                Spacer(
+                    modifier =
+                        Modifier.height(
+                            20.dp
+                        )
+                )
 
-            Text(
-                text = error,
-                color =
-                    NagMeError,
-                fontWeight =
-                    FontWeight.SemiBold
-            )
-        }
+                Text(
+                    text =
+                        error,
+                    color =
+                        NagMeError,
+                    fontWeight =
+                        FontWeight.SemiBold
+                )
+            }
 
         Spacer(
             modifier =
-                Modifier.height(36.dp)
+                Modifier.height(
+                    36.dp
+                )
         )
 
         OutlinedButton(
@@ -681,13 +1031,16 @@ fun AddNagScreen(
         ) {
 
             Text(
-                text = "CANCEL"
+                text =
+                    "CANCEL"
             )
         }
 
         Spacer(
             modifier =
-                Modifier.height(10.dp)
+                Modifier.height(
+                    10.dp
+                )
         )
 
         Button(
@@ -707,7 +1060,8 @@ fun AddNagScreen(
                     ),
             onClick = {
 
-                errorMessage = null
+                errorMessage =
+                    null
 
                 val stopWhenDone =
                     stopMode ==
@@ -734,13 +1088,32 @@ fun AddNagScreen(
                     }
 
                 viewModel.saveNag(
-                    text = text,
+                    text =
+                        text,
                     scheduledAt =
                         scheduledAt,
                     recurrenceType =
                         recurrenceType,
                     selectedDays =
                         selectedDays,
+                    timePeriodIntervalMinutes =
+                        if (
+                            recurrenceType ==
+                            RecurrenceType.DURING_TIME_PERIOD
+                        ) {
+                            timePeriodIntervalMinutes
+                        } else {
+                            null
+                        },
+                    timePeriodEndMinutesOfDay =
+                        if (
+                            recurrenceType ==
+                            RecurrenceType.DURING_TIME_PERIOD
+                        ) {
+                            timePeriodEndMinutesOfDay
+                        } else {
+                            null
+                        },
                     nagIntervalMinutes =
                         nagIntervalMinutes,
                     stopWhenDone =
@@ -752,6 +1125,7 @@ fun AddNagScreen(
                     onSaved =
                         onSaved,
                     onError = { error ->
+
                         errorMessage =
                             error
                     }
@@ -760,7 +1134,8 @@ fun AddNagScreen(
         ) {
 
             Text(
-                text = "SAVE NAG",
+                text =
+                    "SAVE NAG",
                 fontWeight =
                     FontWeight.Bold
             )
@@ -768,7 +1143,9 @@ fun AddNagScreen(
 
         Spacer(
             modifier =
-                Modifier.height(16.dp)
+                Modifier.height(
+                    16.dp
+                )
         )
     }
 }
@@ -779,13 +1156,15 @@ private fun SectionTitle(
 ) {
 
     Text(
-        text = text,
+        text =
+            text,
         color =
             NagMeTeal,
         fontWeight =
             FontWeight.Bold,
         style =
-            MaterialTheme.typography
+            MaterialTheme
+                .typography
                 .titleMedium
     )
 }
@@ -799,7 +1178,9 @@ private fun ChoiceButton(
 
     Spacer(
         modifier =
-            Modifier.height(7.dp)
+            Modifier.height(
+                7.dp
+            )
     )
 
     if (
@@ -853,7 +1234,8 @@ private fun ChoiceButton(
         ) {
 
             Text(
-                text = text
+                text =
+                    text
             )
         }
     }
@@ -889,7 +1271,8 @@ private fun DayRow(
                 (day, label) ->
 
             if (
-                day in selectedDays
+                day in
+                selectedDays
             ) {
 
                 Button(
@@ -908,12 +1291,16 @@ private fun DayRow(
                                     NagMeDarkText
                             ),
                     onClick = {
-                        onToggle(day)
+
+                        onToggle(
+                            day
+                        )
                     }
                 ) {
 
                     Text(
-                        text = label,
+                        text =
+                            label,
                         fontWeight =
                             FontWeight.Bold
                     )
@@ -935,11 +1322,17 @@ private fun DayRow(
                                     NagMeLightText
                             ),
                     onClick = {
-                        onToggle(day)
+
+                        onToggle(
+                            day
+                        )
                     }
                 ) {
 
-                    Text(label)
+                    Text(
+                        text =
+                            label
+                    )
                 }
             }
         }
@@ -974,7 +1367,8 @@ private fun SecondaryButton(
     ) {
 
         Text(
-            text = text,
+            text =
+                text,
             fontWeight =
                 FontWeight.SemiBold
         )
@@ -985,6 +1379,7 @@ private fun recurrenceOptions():
         List<Pair<RecurrenceType, String>> {
 
     return listOf(
+
         RecurrenceType.ONCE to
                 "One time only",
 
@@ -1001,7 +1396,10 @@ private fun recurrenceOptions():
                 "Every week",
 
         RecurrenceType.SELECTED_DAYS to
-                "Choose days"
+                "Choose days",
+
+        RecurrenceType.DURING_TIME_PERIOD to
+                "During time period"
     )
 }
 
@@ -1025,12 +1423,85 @@ private fun formatScheduledTime(
         )
 }
 
+private fun formatMinutesOfDay(
+    minutesOfDay: Int
+): String {
+
+    val calendar =
+        Calendar
+            .getInstance()
+            .apply {
+
+                set(
+                    Calendar.HOUR_OF_DAY,
+                    minutesOfDay / 60
+                )
+
+                set(
+                    Calendar.MINUTE,
+                    minutesOfDay % 60
+                )
+
+                set(
+                    Calendar.SECOND,
+                    0
+                )
+
+                set(
+                    Calendar.MILLISECOND,
+                    0
+                )
+            }
+
+    return DateFormat
+        .getTimeInstance(
+            DateFormat.SHORT
+        )
+        .format(
+            calendar.time
+        )
+}
+
+private fun formatInterval(
+    minutes: Int
+): String {
+
+    return when {
+
+        minutes < 60 ->
+            "$minutes min"
+
+        minutes % 60 == 0 -> {
+
+            val hours =
+                minutes / 60
+
+            if (
+                hours == 1
+            ) {
+                "1 hour"
+            } else {
+                "$hours hours"
+            }
+        }
+
+        else -> {
+
+            val hours =
+                minutes / 60
+
+            val remainingMinutes =
+                minutes % 60
+
+            "${hours}h ${remainingMinutes}m"
+        }
+    }
+}
+
 /*
  * NagMe V1 visual palette.
  *
  * These values are intentionally local to this screen for now.
- * We are changing presentation only, not the application's
- * existing functional theme or Nag logic.
  */
 private val NagMeNavy =
     Color(0xFF06101F)

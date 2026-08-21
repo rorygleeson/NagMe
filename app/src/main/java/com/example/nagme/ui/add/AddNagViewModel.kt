@@ -56,6 +56,8 @@ class AddNagViewModel(
         scheduledAt: Long,
         recurrenceType: RecurrenceType,
         selectedDays: Set<Int>,
+        timePeriodIntervalMinutes: Int?,
+        timePeriodEndMinutesOfDay: Int?,
         nagIntervalMinutes: Int?,
         stopWhenDone: Boolean,
         maxNagCount: Int?,
@@ -90,6 +92,66 @@ class AddNagViewModel(
                 "Choose at least one day."
             )
             return
+        }
+
+        if (
+            recurrenceType ==
+            RecurrenceType.DURING_TIME_PERIOD
+        ) {
+
+            if (
+                selectedDays.isEmpty()
+            ) {
+                onError(
+                    "Choose at least one day."
+                )
+                return
+            }
+
+            if (
+                timePeriodIntervalMinutes == null ||
+                timePeriodIntervalMinutes <= 0
+            ) {
+                onError(
+                    "Choose how often this Nag should repeat during the time period."
+                )
+                return
+            }
+
+            if (
+                timePeriodEndMinutesOfDay == null
+            ) {
+                onError(
+                    "Choose an end time for the time period."
+                )
+                return
+            }
+
+            val startCalendar =
+                java.util.Calendar
+                    .getInstance()
+                    .apply {
+                        timeInMillis =
+                            scheduledAt
+                    }
+
+            val startMinutesOfDay =
+                startCalendar.get(
+                    java.util.Calendar.HOUR_OF_DAY
+                ) * 60 +
+                        startCalendar.get(
+                            java.util.Calendar.MINUTE
+                        )
+
+            if (
+                timePeriodEndMinutesOfDay <=
+                startMinutesOfDay
+            ) {
+                onError(
+                    "End time must be after the start time."
+                )
+                return
+            }
         }
 
         if (
@@ -139,6 +201,26 @@ class AddNagViewModel(
 
                         selectedDays =
                             selectedDays,
+
+                        timePeriodIntervalMinutes =
+                            if (
+                                recurrenceType ==
+                                RecurrenceType.DURING_TIME_PERIOD
+                            ) {
+                                timePeriodIntervalMinutes
+                            } else {
+                                null
+                            },
+
+                        timePeriodEndMinutesOfDay =
+                            if (
+                                recurrenceType ==
+                                RecurrenceType.DURING_TIME_PERIOD
+                            ) {
+                                timePeriodEndMinutesOfDay
+                            } else {
+                                null
+                            },
 
                         nagIntervalMinutes =
                             nagIntervalMinutes,

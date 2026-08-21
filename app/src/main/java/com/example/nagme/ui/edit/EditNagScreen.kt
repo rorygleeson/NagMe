@@ -62,6 +62,9 @@ fun EditNagScreen(
     val nag by
     viewModel.nag.collectAsState()
 
+    val nextScheduledAt by
+    viewModel.nextScheduledAt.collectAsState()
+
     var text by remember {
         mutableStateOf("")
     }
@@ -85,8 +88,24 @@ fun EditNagScreen(
         )
     }
 
+    var timePeriodIntervalMinutes by remember {
+        mutableStateOf<Int?>(60)
+    }
+
+    var timePeriodEndMinutesOfDay by remember {
+        mutableStateOf<Int?>(17 * 60)
+    }
+
     var enabled by remember {
         mutableStateOf(true)
+    }
+
+    var nagIntervalMinutes by remember {
+        mutableStateOf<Int?>(null)
+    }
+
+    var maxNagCount by remember {
+        mutableStateOf<Int?>(null)
     }
 
     var errorMessage by remember {
@@ -117,17 +136,42 @@ fun EditNagScreen(
             selectedDays =
                 it.selectedDays
 
+            timePeriodIntervalMinutes =
+                it.timePeriodIntervalMinutes
+                    ?: 60
+
+            timePeriodEndMinutesOfDay =
+                it.timePeriodEndMinutesOfDay
+                    ?: 17 * 60
+
             enabled =
                 it.enabled
+
+            nagIntervalMinutes =
+                it.nagIntervalMinutes
+
+            maxNagCount =
+                it.maxNagCount
         }
     }
 
     fun chooseDate() {
 
+        val pickerInitialTime =
+            if (
+                recurrenceType !=
+                RecurrenceType.ONCE &&
+                nextScheduledAt != null
+            ) {
+                nextScheduledAt!!
+            } else {
+                scheduledAt
+            }
+
         val calendar =
             Calendar.getInstance().apply {
                 timeInMillis =
-                    scheduledAt
+                    pickerInitialTime
             }
 
         DatePickerDialog(
@@ -219,6 +263,27 @@ fun EditNagScreen(
             calendar.get(
                 Calendar.MINUTE
             ),
+            false
+        ).show()
+    }
+
+    fun chooseTimePeriodEnd() {
+
+        val endMinutes =
+            timePeriodEndMinutesOfDay
+                ?: 17 * 60
+
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+
+                timePeriodEndMinutesOfDay =
+                    hour * 60 + minute
+
+                errorMessage = null
+            },
+            endMinutes / 60,
+            endMinutes % 60,
             false
         ).show()
     }
@@ -331,60 +396,152 @@ fun EditNagScreen(
                 Modifier.height(28.dp)
         )
 
-        SectionTitle(
-            text = "WHEN"
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(10.dp)
-        )
-
-        Text(
-            text =
-                formatScheduledTime(
-                    scheduledAt
-                ),
-            color =
-                Color.White,
-            fontWeight =
-                FontWeight.SemiBold,
-            style =
-                MaterialTheme.typography
-                    .titleMedium
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(12.dp)
-        )
-
-        Row(
-            modifier =
-                Modifier.fillMaxWidth(),
-            horizontalArrangement =
-                Arrangement.spacedBy(
-                    8.dp
-                )
+        if (
+            recurrenceType ==
+            RecurrenceType.ONCE
         ) {
 
-            SecondaryButton(
-                text = "DATE",
-                modifier =
-                    Modifier.weight(1f),
-                onClick = {
-                    chooseDate()
-                }
+            SectionTitle(
+                text = "WHEN"
             )
 
-            SecondaryButton(
-                text = "TIME",
+            Spacer(
                 modifier =
-                    Modifier.weight(1f),
-                onClick = {
-                    chooseTime()
-                }
+                    Modifier.height(10.dp)
             )
+
+            Text(
+                text =
+                    formatScheduledTime(
+                        scheduledAt
+                    ),
+                color =
+                    Color.White,
+                fontWeight =
+                    FontWeight.SemiBold,
+                style =
+                    MaterialTheme.typography
+                        .titleMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp)
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "DATE",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        chooseDate()
+                    }
+                )
+
+                SecondaryButton(
+                    text = "TIME",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        chooseTime()
+                    }
+                )
+            }
+
+        } else {
+
+            nextScheduledAt?.let { nextTime ->
+
+                Text(
+                    text =
+                        "NEXT NAG SCHEDULED FOR",
+                    color =
+                        NagMeTeal,
+                    fontWeight =
+                        FontWeight.Bold,
+                    style =
+                        MaterialTheme.typography
+                            .labelLarge
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(8.dp)
+                )
+
+                Text(
+                    text =
+                        formatScheduledTime(
+                            nextTime
+                        ),
+                    color =
+                        Color.White,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(22.dp)
+            )
+
+            Text(
+                text =
+                    "CHANGE SCHEDULE",
+                color =
+                    NagMeTeal,
+                fontWeight =
+                    FontWeight.Bold,
+                style =
+                    MaterialTheme.typography
+                        .labelLarge
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "DATE",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        chooseDate()
+                    }
+                )
+
+                SecondaryButton(
+                    text = "TIME",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        chooseTime()
+                    }
+                )
+            }
         }
 
         Spacer(
@@ -456,6 +613,415 @@ fun EditNagScreen(
             )
         }
 
+        if (
+            recurrenceType ==
+            RecurrenceType.DURING_TIME_PERIOD
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(18.dp)
+            )
+
+            Text(
+                text = "Every",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            val periodInterval =
+                timePeriodIntervalMinutes
+                    ?: 60
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "−",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        timePeriodIntervalMinutes =
+                            maxOf(
+                                15,
+                                periodInterval - 15
+                            )
+                    }
+                )
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMeTeal,
+                                contentColor =
+                                    NagMeDarkText
+                            ),
+                    onClick = {
+                    }
+                ) {
+
+                    Text(
+                        text =
+                            formatInterval(
+                                periodInterval
+                            ),
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                SecondaryButton(
+                    text = "+",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+                        timePeriodIntervalMinutes =
+                            minOf(
+                                720,
+                                periodInterval + 15
+                            )
+                    }
+                )
+            }
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp)
+            )
+
+            Text(
+                text = "From",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp)
+            )
+
+            Text(
+                text =
+                    formatTimeOnly(
+                        scheduledAt
+                    ),
+                color =
+                    Color.White,
+                fontWeight =
+                    FontWeight.SemiBold,
+                style =
+                    MaterialTheme.typography
+                        .titleMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            SecondaryButton(
+                text = "START TIME",
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick = {
+                    chooseTime()
+                }
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp)
+            )
+
+            Text(
+                text = "Until",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp)
+            )
+
+            Text(
+                text =
+                    formatMinutesOfDay(
+                        timePeriodEndMinutesOfDay
+                            ?: 17 * 60
+                    ),
+                color =
+                    Color.White,
+                fontWeight =
+                    FontWeight.SemiBold,
+                style =
+                    MaterialTheme.typography
+                        .titleMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            SecondaryButton(
+                text = "END TIME",
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick = {
+                    chooseTimePeriodEnd()
+                }
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp)
+            )
+
+            Text(
+                text = "Days",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            DayRow(
+                selectedDays =
+                    selectedDays,
+                onToggle = { day ->
+
+                    selectedDays =
+                        if (
+                            day in selectedDays
+                        ) {
+                            selectedDays - day
+                        } else {
+                            selectedDays + day
+                        }
+
+                    errorMessage = null
+                }
+            )
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(30.dp)
+        )
+
+        SectionTitle(
+            text = "NAGGING"
+        )
+
+        nagIntervalMinutes?.let { interval ->
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp)
+            )
+
+            Text(
+                text = "Nag every",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "−",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+
+                        nagIntervalMinutes =
+                            maxOf(
+                                1,
+                                interval - 1
+                            )
+                    }
+                )
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMeTeal,
+                                contentColor =
+                                    NagMeDarkText
+                            ),
+                    onClick = {
+                    }
+                ) {
+
+                    Text(
+                        text =
+                            if (
+                                interval == 1
+                            ) {
+                                "1 min"
+                            } else {
+                                "$interval min"
+                            },
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                SecondaryButton(
+                    text = "+",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+
+                        nagIntervalMinutes =
+                            minOf(
+                                1440,
+                                interval + 1
+                            )
+                    }
+                )
+            }
+        }
+
+        maxNagCount?.let { maximum ->
+
+            Spacer(
+                modifier =
+                    Modifier.height(20.dp)
+            )
+
+            Text(
+                text = "Maximum nags",
+                color =
+                    NagMeLightText,
+                fontWeight =
+                    FontWeight.SemiBold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(10.dp)
+            )
+
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(
+                        8.dp
+                    )
+            ) {
+
+                SecondaryButton(
+                    text = "−",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+
+                        maxNagCount =
+                            maxOf(
+                                1,
+                                maximum - 1
+                            )
+                    }
+                )
+
+                Button(
+                    modifier =
+                        Modifier.weight(1f),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .buttonColors(
+                                containerColor =
+                                    NagMeTeal,
+                                contentColor =
+                                    NagMeDarkText
+                            ),
+                    onClick = {
+                    }
+                ) {
+
+                    Text(
+                        text =
+                            maximum.toString(),
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+                }
+
+                SecondaryButton(
+                    text = "+",
+                    modifier =
+                        Modifier.weight(1f),
+                    onClick = {
+
+                        maxNagCount =
+                            minOf(
+                                99,
+                                maximum + 1
+                            )
+                    }
+                )
+            }
+        }
+
         Spacer(
             modifier =
                 Modifier.height(30.dp)
@@ -499,7 +1065,7 @@ fun EditNagScreen(
                 ) {
 
                     Text(
-                        text = "Enabled",
+                        text = "Nag active",
                         color =
                             Color.White,
                         fontWeight =
@@ -514,7 +1080,7 @@ fun EditNagScreen(
                     Text(
                         text =
                             if (enabled) {
-                                "This Nag is active."
+                                "Turn off to pause this Nag."
                             } else {
                                 "This Nag is paused."
                             },
@@ -585,6 +1151,28 @@ fun EditNagScreen(
                         selectedDays,
                     enabled =
                         enabled,
+                    timePeriodIntervalMinutes =
+                        if (
+                            recurrenceType ==
+                            RecurrenceType.DURING_TIME_PERIOD
+                        ) {
+                            timePeriodIntervalMinutes
+                        } else {
+                            null
+                        },
+                    timePeriodEndMinutesOfDay =
+                        if (
+                            recurrenceType ==
+                            RecurrenceType.DURING_TIME_PERIOD
+                        ) {
+                            timePeriodEndMinutesOfDay
+                        } else {
+                            null
+                        },
+                    nagIntervalMinutes =
+                        nagIntervalMinutes,
+                    maxNagCount =
+                        maxNagCount,
                     onSaved =
                         onSaved,
                     onError = { error ->
@@ -870,7 +1458,10 @@ private fun recurrenceOptions():
                 "Weekly",
 
         RecurrenceType.SELECTED_DAYS to
-                "Choose days"
+                "Choose days",
+
+        RecurrenceType.DURING_TIME_PERIOD to
+                "During time period"
     )
 }
 
@@ -973,6 +1564,92 @@ private fun formatScheduledTime(
         .format(
             Date(timestamp)
         )
+}
+
+private fun formatTimeOnly(
+    timestamp: Long
+): String {
+
+    return DateFormat
+        .getTimeInstance(
+            DateFormat.SHORT
+        )
+        .format(
+            Date(timestamp)
+        )
+}
+
+private fun formatMinutesOfDay(
+    minutesOfDay: Int
+): String {
+
+    val calendar =
+        Calendar.getInstance().apply {
+
+            set(
+                Calendar.HOUR_OF_DAY,
+                minutesOfDay / 60
+            )
+
+            set(
+                Calendar.MINUTE,
+                minutesOfDay % 60
+            )
+
+            set(
+                Calendar.SECOND,
+                0
+            )
+
+            set(
+                Calendar.MILLISECOND,
+                0
+            )
+        }
+
+    return DateFormat
+        .getTimeInstance(
+            DateFormat.SHORT
+        )
+        .format(
+            calendar.time
+        )
+}
+
+private fun formatInterval(
+    minutes: Int
+): String {
+
+    return when {
+
+        minutes < 60 ->
+            "$minutes min"
+
+        minutes % 60 == 0 -> {
+
+            val hours =
+                minutes / 60
+
+            if (
+                hours == 1
+            ) {
+                "1 hour"
+            } else {
+                "$hours hours"
+            }
+        }
+
+        else -> {
+
+            val hours =
+                minutes / 60
+
+            val remainingMinutes =
+                minutes % 60
+
+            "${hours}h ${remainingMinutes}m"
+        }
+    }
 }
 
 /*

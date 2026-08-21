@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NagMe — Don't just remind me. Nag me.</title>
+  <meta name="description" content="NagMe is the reminder app that keeps coming back until the job gets done, with spoken reminders, personalities and fresh AI-powered nags." />
+  <meta name="theme-color" content="#06101f" />
+  <style>
+    :root{
+      --bg:#06101f;
+      --bg2:#091426;
+      --panel:#0d182b;
+      --panel2:#111c31;
+      --text:#f7f8fb;
+      --muted:#c7cfdd;
+      --muted2:#8e9aae;
+      --line:#26344c;
+      --teal:#31d3c0;
+      --teal2:#18bca8;
+      --purple:#a95de6;
+      --purple2:#6d37be;
+      --danger:#ff4d53;
+      --max:1440px;
+      --shadow:0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 21% 20%, rgba(91,36,160,.24), transparent 23%),
+        radial-gradient(circle at 74% 7%, rgba(20,86,128,.13), transparent 25%),
+        linear-gradient(180deg,#050d19 0%,#06101f 48%,#07111f 100%);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+    a{color:inherit}
+    img{max-width:100%;display:block}
+    .wrap{width:min(calc(100% - 56px),var(--max));margin-inline:auto}
+
+    header{padding:22px 0 8px;position:relative;z-index:20}
+    nav{display:flex;align-items:center;gap:28px}
+    .brand{font-weight:900;font-size:3rem;line-height:1;letter-spacing:-.06em;text-decoration:none;margin-right:auto}
+    .brand span{color:var(--teal)}
+    .navlinks{display:flex;gap:36px;align-items:center;font-weight:700;font-size:1.02rem}
+    .navlinks a{text-decoration:none;color:#f7f8fb}
+    .navlinks a:hover{color:var(--teal)}
+
+    .play-button,.outline-button{
+      display:inline-flex;align-items:center;justify-content:center;gap:12px;
+      min-height:58px;padding:0 28px;border-radius:12px;font-weight:900;font-size:1.08rem;text-decoration:none;
+      transition:.2s ease;white-space:nowrap
+    }
+    .play-button{background:linear-gradient(180deg,#37dbc8,#2fc8b5);color:#04101a;box-shadow:0 10px 30px rgba(49,211,192,.13)}
+    .play-button:hover{transform:translateY(-2px);filter:brightness(1.05)}
+    .play-triangle{width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:15px solid #07121d;display:inline-block}
+    .outline-button{border:1px solid #455269;background:rgba(7,16,31,.6);color:#fff}
+    .outline-button:hover{border-color:var(--teal);color:var(--teal)}
+
+    .hero{display:grid;grid-template-columns:.92fr 1.08fr;align-items:center;gap:54px;min-height:650px;padding:28px 0 48px;border-bottom:1px solid var(--line)}
+    .hero-art{min-height:545px;display:flex;align-items:center;justify-content:center;position:relative}
+    .hero-art img{width:100%;max-width:650px;border-radius:30px;mix-blend-mode:screen;filter:saturate(1.03) contrast(1.02)}
+    .eyebrow{display:flex;align-items:center;gap:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--teal);font-weight:900;font-size:1.03rem;margin-bottom:18px}
+    .eyebrow .mini{color:var(--purple);font-size:1.35rem}
+    h1{font-size:clamp(4rem,6.4vw,6.45rem);line-height:.89;letter-spacing:-.065em;margin:0 0 24px;max-width:780px}
+    h1 .accent{color:var(--teal)}
+    .lead{font-size:1.46rem;line-height:1.55;color:#d0d7e3;max-width:760px;margin:0 0 30px}
+    .lead strong{color:var(--teal);font-weight:900}
+    .hero-actions{display:flex;gap:16px;flex-wrap:wrap}
+
+    .section-title{display:flex;align-items:center;justify-content:center;gap:18px;text-transform:uppercase;letter-spacing:.13em;font-size:1.38rem;font-weight:900;margin:34px 0}
+    .section-title:before,.section-title:after{content:"";width:28px;height:18px;border-top:3px solid var(--teal);border-bottom:3px solid var(--teal);transform:skewY(26deg)}
+
+    .features{padding:8px 0 36px}
+    .feature-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:24px}
+    .feature{text-align:center;min-width:0}
+    .icon{height:76px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;color:var(--teal)}
+    .icon svg{width:60px;height:60px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+    .feature:nth-child(3n) .icon,.feature:nth-child(4n) .icon{color:var(--purple)}
+    .feature h3{font-size:1rem;line-height:1.2;margin:0 0 11px}
+    .feature p{margin:0;color:#c5cedb;font-size:.91rem;line-height:1.6}
+
+    .compare{margin:36px 0 18px;border:1px solid #35425b;border-radius:20px;overflow:hidden;background:linear-gradient(110deg,rgba(18,30,51,.93),rgba(9,17,32,.92));box-shadow:var(--shadow)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr 1.05fr;min-height:390px}
+    .compare-col{padding:30px 42px}
+    .compare-col + .compare-col{border-left:1px solid #26344c}
+    .compare h3{text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);font-size:1.05rem;margin:0 0 24px}
+    .compare .nag-title{color:var(--teal)}
+    .check-row{display:grid;grid-template-columns:30px 1fr 28px;gap:12px;align-items:center;margin:21px 0;font-size:1.05rem}
+    .check-row .sym{font-size:1.28rem;color:#8692a6}
+    .check-row .no{color:var(--danger);font-size:1.5rem;font-weight:900;text-align:right}
+    .check-row .yes{color:var(--teal);font-size:1.55rem;font-weight:900;text-align:right}
+    .compare-art{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 55% 45%,rgba(102,45,177,.25),transparent 45%)}
+    .compare-art img{width:100%;height:100%;object-fit:cover;object-position:center;mix-blend-mode:screen}
+    .vs{position:absolute;left:-38px;top:50%;transform:translateY(-50%);width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 40% 25%,#5e4597,#1c2445);border:1px solid #754db3;font-weight:900;font-size:1.3rem;z-index:2}
+
+    .how{padding:0 0 30px}
+    .steps{display:grid;grid-template-columns:1fr 50px 1fr 50px 1fr;align-items:center;gap:24px}
+    .step{display:grid;grid-template-columns:130px 1fr;gap:26px;align-items:center}
+    .step-icon{width:130px;height:130px;border:2px solid var(--purple);border-radius:50%;display:grid;place-items:center;color:var(--teal);background:radial-gradient(circle,rgba(49,211,192,.05),transparent 60%)}
+    .step-icon svg{width:68px;height:68px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .step-copy h3{margin:0 0 8px;font-size:1.08rem}.num{font-size:2.1rem;color:var(--teal);font-weight:900;margin-right:12px}.step-copy p{margin:0;color:#cbd3df;line-height:1.65}
+    .arrow{font-size:2.3rem;text-align:center;color:#f6f7f8}
+
+    .cta{margin:28px 0 20px;border:1px solid #7043a7;border-radius:18px;background:linear-gradient(110deg,rgba(25,32,55,.94),rgba(12,17,33,.95));display:grid;grid-template-columns:1.15fr .9fr .5fr;align-items:center;gap:30px;padding:28px 32px 0;overflow:hidden}
+    .cta h2{font-size:2rem;line-height:1.08;margin:0 0 12px;letter-spacing:-.035em}.cta h2 span{color:var(--teal)}
+    .cta p{margin:0 0 24px;color:#cbd3df;font-size:1.03rem}.cta p strong{color:var(--teal)}
+    .rating{text-align:center;color:#d9deea;margin-top:14px;font-size:.9rem}.stars{color:#ffc122;letter-spacing:3px;font-size:1.12rem}
+    .cta-art{align-self:end;height:190px;overflow:hidden}.cta-art img{height:100%;width:100%;object-fit:cover;object-position:center top;mix-blend-mode:screen}
+
+    footer{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:30px;padding:0 12px 26px;color:#a9b3c2;font-size:.84rem}
+    .footlinks{display:flex;gap:46px}.footlinks a{text-decoration:none;color:var(--teal)}
+    .social{justify-self:end;display:flex;gap:26px;font-size:1.4rem;color:#c8cfdb}.social a{text-decoration:none}
+
+    @media (max-width:1200px){
+      .feature-grid{grid-template-columns:repeat(4,1fr)}
+      .hero{grid-template-columns:1fr 1fr;gap:30px}
+      .steps{grid-template-columns:1fr;gap:18px}.arrow{transform:rotate(90deg)}
+      .step{max-width:720px;margin:auto;width:100%}
+    }
+    @media (max-width:900px){
+      .wrap{width:min(calc(100% - 32px),var(--max))}
+      .navlinks{display:none}.brand{font-size:2.4rem}.nav-play{padding:0 18px;min-height:50px;font-size:.92rem}
+      .hero{grid-template-columns:1fr;padding-top:10px}.hero-copy{order:-1}.hero-art{min-height:0}.hero-art img{max-width:560px}
+      h1{font-size:clamp(3.8rem,13vw,6rem)}.lead{font-size:1.18rem}
+      .compare-grid{grid-template-columns:1fr 1fr}.compare-art{grid-column:1/-1;min-height:320px}.vs{display:none}
+      .cta{grid-template-columns:1fr}.cta-art{display:none}.rating{text-align:left;margin-bottom:26px}
+      footer{grid-template-columns:1fr;text-align:center}.footlinks{justify-content:center;flex-wrap:wrap;gap:20px 32px}.social{justify-self:center}
+    }
+    @media (max-width:650px){
+      .wrap{width:min(calc(100% - 24px),var(--max))}.nav-play{font-size:0;width:52px;padding:0}.nav-play .play-triangle{margin:0}
+      .hero{min-height:0}.hero-art img{border-radius:18px}.eyebrow{font-size:.78rem;letter-spacing:.11em}.hero-actions>*{width:100%}
+      .feature-grid{grid-template-columns:repeat(2,1fr);gap:30px 18px}.feature p{font-size:.86rem}
+      .compare-grid{grid-template-columns:1fr}.compare-col + .compare-col{border-left:0;border-top:1px solid #26344c}.compare-col{padding:26px 24px}
+      .compare-art{min-height:260px}.section-title{font-size:1.02rem;gap:10px}.section-title:before,.section-title:after{width:18px}
+      .step{grid-template-columns:86px 1fr;gap:18px}.step-icon{width:86px;height:86px}.step-icon svg{width:46px;height:46px}.num{font-size:1.7rem}
+      .cta{padding:24px 22px}.cta h2{font-size:1.75rem}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <a href="#top" class="brand">Nag<span>Me</span></a>
+      <div class="navlinks">
+        <a href="#features">Features</a>
+        <a href="#how">How It Works</a>
+        <a href="#different">Why It’s Different</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <a class="play-button nav-play" href="#download"><span class="play-triangle"></span> Get it on Google Play</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="wrap">
+  <section class="hero">
+    <div class="hero-art" aria-hidden="true"><img src="assets/hero.png" alt="" /></div>
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="mini">😈</span> Reminders that won’t give up</div>
+      <h1>Don’t just<br>remind me.<br><span class="accent">Nag me.</span></h1>
+      <p class="lead">A normal reminder tells you once. NagMe <strong>actively nags you until the thing gets done</strong> — with spoken reminders, personalities and AI that keeps every nag fresh.</p>
+      <div class="hero-actions">
+        <a class="play-button" href="#download"><span class="play-triangle"></span> Get it on Google Play</a>
+        <a class="outline-button" href="#different">Why it’s different</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="features">
+    <div class="section-title">Why NagMe is different</div>
+    <div class="feature-grid">
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><path d="M9 25v14h9l14 11V14L18 25H9z"/><path d="M40 23c4 5 4 13 0 18M47 17c8 9 8 21 0 30"/></svg></div><h3>Speaks to You</h3><p>Hear your reminders instead of just seeing another notification.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><path d="M16 18a20 20 0 0 1 32 5"/><path d="M48 13v10H38"/><path d="M48 46a20 20 0 0 1-32-5"/><path d="M16 51V41h10"/></svg></div><h3>It Keeps Nagging</h3><p>Choose how often NagMe comes back until you mark the task as done.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><path d="M8 25c5-3 10-4 15-3v24c-9 0-15-6-15-15v-6z"/><path d="M56 25c-5-3-10-4-15-3v24c9 0 15-6 15-15v-6z"/><path d="M16 34c4 4 8 4 12 0M36 34c4 4 8 4 12 0"/><path d="M24 45c5 5 11 5 16 0"/></svg></div><h3>Has Personality</h3><p>Pick your nagger: Irish Mammy, Drill Sergeant, Aussie Mate, Posh Butler and more.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><path d="M28 5v9M28 50v9M5 32h9M43 32h9M12 16l7 7M37 41l7 7M12 48l7-7M37 23l7-7"/><path d="M28 18c-8 0-14 6-14 14s6 14 14 14c6 0 11-3 13-8h8v-12h-8c-2-5-7-8-13-8z"/></svg></div><h3>AI Makes It Fresh</h3><p>No boring repeats. AI creates new, funny and increasingly impatient nags.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><circle cx="32" cy="18" r="10"/><path d="M13 55c2-14 10-20 19-20s17 6 19 20"/></svg></div><h3>Personalised</h3><p>Uses your name and the context of your reminder. It’s like they’re talking to you.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><path d="M10 50h8V38h-8v12zM27 50h8V28h-8v22zM44 50h8V16h-8v34z"/><path d="M10 24l12-7 11 4 19-13"/><path d="M44 8h8v8"/></svg></div><h3>Gets More Persistent</h3><p>If you ignore it, NagMe turns up the pressure.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><circle cx="29" cy="32" r="21"/><circle cx="29" cy="32" r="10"/><path d="M29 32l18-18M43 14h8v8"/></svg></div><h3>Focused on Done</h3><p>NagMe isn’t happy until the job is actually finished.</p></article>
+      <article class="feature"><div class="icon"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22"/><path d="M32 17v16l11 7"/><path d="M16 10l-5 5M48 10l5 5"/></svg></div><h3>See Your History</h3><p>See what you’ve completed, what you ignored and how many nags it took.</p></article>
+    </div>
+  </section>
+
+  <section id="different" class="compare">
+    <div class="compare-grid">
+      <div class="compare-col">
+        <h3>Normal Reminder Apps</h3>
+        <div class="check-row"><span class="sym">♧</span><span>Tell you once</span><span class="no">×</span></div>
+        <div class="check-row"><span class="sym">☝</span><span>Easy to ignore</span><span class="no">×</span></div>
+        <div class="check-row"><span class="sym">◌</span><span>Same boring reminder</span><span class="no">×</span></div>
+        <div class="check-row"><span class="sym">☹</span><span>No personality</span><span class="no">×</span></div>
+        <div class="check-row"><span class="sym">♙</span><span>You decide when it’s done</span><span class="no">×</span></div>
+      </div>
+      <div class="compare-col">
+        <h3 class="nag-title">NagMe</h3>
+        <div class="check-row"><span class="sym">⟳</span><span>Keeps coming back</span><span class="yes">✓</span></div>
+        <div class="check-row"><span class="sym">♩</span><span>Hard to ignore</span><span class="yes">✓</span></div>
+        <div class="check-row"><span class="sym">✣</span><span>Fresh, AI-powered nags</span><span class="yes">✓</span></div>
+        <div class="check-row"><span class="sym">☻</span><span>Full of personality</span><span class="yes">✓</span></div>
+        <div class="check-row"><span class="sym">◎</span><span>Stops only when it’s DONE</span><span class="yes">✓</span></div>
+      </div>
+      <div class="compare-art" aria-hidden="true"><div class="vs">VS</div><img src="assets/compare.png" alt="" /></div>
+    </div>
+  </section>
+
+  <section id="how" class="how">
+    <div class="section-title">How it works</div>
+    <div class="steps">
+      <article class="step"><div class="step-icon"><svg viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="40" rx="5"/><path d="M22 10v9M42 10v9M21 27h16M21 35h12M36 45l11-11 5 5-11 11-7 2z"/></svg></div><div class="step-copy"><h3><span class="num">1</span>Create Your Nag</h3><p>What do you need to do? When? How often should I nag you? Done.</p></div></article>
+      <div class="arrow">→</div>
+      <article class="step"><div class="step-icon"><svg viewBox="0 0 64 64"><path d="M10 28v12h8l20 10V18L18 28h-8z"/><path d="M46 25c5 5 5 13 0 18"/></svg></div><div class="step-copy"><h3><span class="num">2</span>Get Nagged</h3><p>NagMe speaks to you and keeps coming back until you do it.</p></div></article>
+      <div class="arrow">→</div>
+      <article class="step"><div class="step-icon"><svg viewBox="0 0 64 64"><circle cx="30" cy="32" r="22"/><path d="M18 32l8 8 20-22"/><path d="M45 11l7 2-2 7"/></svg></div><div class="step-copy"><h3><span class="num">3</span>Mark Done</h3><p>You finish the task and NagMe finally shuts up (until next time).</p></div></article>
+    </div>
+  </section>
+
+  <section id="download" class="cta">
+    <div><h2>Stop ignoring.<br><span>Start getting things done.</span></h2><p>Download <strong>NagMe</strong> now and let the world’s most persistent (and fun) nagger keep you on track.</p></div>
+    <div><a class="play-button" href="#"><span class="play-triangle"></span> Get it on Google Play</a><div class="rating"><span class="stars">★★★★★</span> &nbsp;4.9 average rating&nbsp; | &nbsp;Productivity</div></div>
+    <div class="cta-art" aria-hidden="true"><img src="assets/cta.png" alt="" /></div>
+  </section>
+
+  <section id="faq" style="height:1px;overflow:hidden" aria-label="FAQ"></section>
+</main>
+
+<footer class="wrap">
+  <div>© 2025 NagMe. All rights reserved.</div>
+  <div class="footlinks"><a href="#">Privacy Policy</a><a href="#">Terms of Use</a><a href="#">Contact</a></div>
+  <div class="social"><a href="#" aria-label="Facebook">f</a><a href="#" aria-label="Instagram">◎</a><a href="#" aria-label="Email">✉</a></div>
+</footer>
+</body>
+</html>

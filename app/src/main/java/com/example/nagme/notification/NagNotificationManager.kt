@@ -87,6 +87,11 @@ class NagNotificationManager(
                     EXTRA_NAG_ID,
                     nag.id
                 )
+
+                putExtra(
+                    EXTRA_OPENED_FROM_NOTIFICATION,
+                    true
+                )
             }
 
         val pendingIntent =
@@ -210,6 +215,9 @@ class NagNotificationManager(
 
         const val EXTRA_NAG_ID =
             "nagme_extra_nag_id"
+
+        const val EXTRA_OPENED_FROM_NOTIFICATION =
+            "nagme_extra_opened_from_notification"
 
         private const val CHANNEL_ID =
             "nagme_user_nags"

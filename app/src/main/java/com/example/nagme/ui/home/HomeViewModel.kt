@@ -7,9 +7,13 @@ import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.NagOccurrence
 import com.example.nagme.data.RoomNagRepository
+import com.example.nagme.logic.NagEngine
+import com.example.nagme.notification.NagNotificationManager
+import com.example.nagme.scheduler.NagScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class HomeViewModel(
     application: Application
@@ -18,6 +22,20 @@ class HomeViewModel(
     private val repository =
         RoomNagRepository(
             NagDatabase.getInstance(application)
+        )
+
+    private val engine =
+        NagEngine(repository)
+
+    private val scheduler =
+        NagScheduler(
+            context = application,
+            repository = repository
+        )
+
+    private val nagNotificationManager =
+        NagNotificationManager(
+            application
         )
 
     val uiState =
@@ -83,6 +101,27 @@ class HomeViewModel(
                 initialValue =
                     HomeUiState()
             )
+
+    fun markDone(
+        item: HomeNagItem
+    ) {
+
+        viewModelScope.launch {
+
+            engine.completeOccurrence(
+                nag = item.nag,
+                occurrence = item.occurrence,
+                completedAt =
+                    System.currentTimeMillis()
+            )
+
+            nagNotificationManager.cancel(
+                item.nag.id
+            )
+
+            scheduler.reschedule()
+        }
+    }
 }
 
 data class HomeUiState(

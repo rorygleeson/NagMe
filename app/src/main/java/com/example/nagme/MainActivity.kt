@@ -11,7 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.lifecycleScope
+import com.example.nagme.data.NagDatabase
+import com.example.nagme.data.RoomNagRepository
 import com.example.nagme.notification.NagNotificationManager
+import com.example.nagme.scheduler.NagScheduler
 import com.example.nagme.settings.UserSettings
 import com.example.nagme.settings.UserSettingsRepository
 import com.example.nagme.speech.VoicePickerScreen
@@ -23,12 +27,16 @@ import com.example.nagme.ui.home.HomeScreen
 import com.example.nagme.ui.onboarding.NameOnboardingScreen
 import com.example.nagme.ui.onboarding.VoiceOnboardingScreen
 import com.example.nagme.ui.settings.SettingsScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private var notificationNagId by
     mutableStateOf<Long?>(null)
+
+    private var notificationOpenedFromNotification by
+    mutableStateOf(false)
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -38,6 +46,15 @@ class MainActivity : ComponentActivity() {
         readNotificationIntent(
             intent
         )
+
+        /*
+         * Rebuild the next Android alarm whenever NagMe starts.
+         *
+         * This provides recovery after an app update if Android
+         * has removed the previously registered AlarmManager alarm
+         * while the Nag/occurrence data remains in Room.
+         */
+        rescheduleNagAlarms()
 
         setContent {
 
@@ -67,6 +84,10 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf<Long?>(null)
                 }
 
+                var currentNagOpenedFromNotification by remember {
+                    mutableStateOf(false)
+                }
+
                 var editNagId by remember {
                     mutableStateOf<Long?>(null)
                 }
@@ -84,10 +105,14 @@ class MainActivity : ComponentActivity() {
                     currentNagId =
                         nagIdFromNotification
 
+                    currentNagOpenedFromNotification =
+                        notificationOpenedFromNotification
+
                     temporaryScreen = null
                     editNagId = null
 
                     notificationNagId = null
+                    notificationOpenedFromNotification = false
                 }
 
                 when {
@@ -131,11 +156,17 @@ class MainActivity : ComponentActivity() {
 
                         CurrentNagScreen(
                             nagId = currentNagId!!,
+                            showDoneButton =
+                                currentNagOpenedFromNotification,
                             onBack = {
                                 currentNagId = null
+                                currentNagOpenedFromNotification =
+                                    false
                             },
                             onDone = {
                                 currentNagId = null
+                                currentNagOpenedFromNotification =
+                                    false
                             }
                         )
                     }
@@ -231,6 +262,9 @@ class MainActivity : ComponentActivity() {
                                     "Settings"
                             },
                             onOpenActiveNag = { nagId ->
+                                currentNagOpenedFromNotification =
+                                    false
+
                                 currentNagId =
                                     nagId
                             },
@@ -257,6 +291,34 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun rescheduleNagAlarms() {
+
+        lifecycleScope.launch(
+            Dispatchers.IO
+        ) {
+
+            val database =
+                NagDatabase.getInstance(
+                    applicationContext
+                )
+
+            val repository =
+                RoomNagRepository(
+                    database
+                )
+
+            val scheduler =
+                NagScheduler(
+                    context =
+                        applicationContext,
+                    repository =
+                        repository
+                )
+
+            scheduler.reschedule()
+        }
+    }
+
     private fun readNotificationIntent(
         intent: Intent?
     ) {
@@ -281,6 +343,13 @@ class MainActivity : ComponentActivity() {
         ) {
             notificationNagId =
                 nagId
+
+            notificationOpenedFromNotification =
+                intent.getBooleanExtra(
+                    NagNotificationManager
+                        .EXTRA_OPENED_FROM_NOTIFICATION,
+                    false
+                )
         }
 
         /*
@@ -289,6 +358,11 @@ class MainActivity : ComponentActivity() {
          */
         intent.removeExtra(
             NagNotificationManager.EXTRA_NAG_ID
+        )
+
+        intent.removeExtra(
+            NagNotificationManager
+                .EXTRA_OPENED_FROM_NOTIFICATION
         )
     }
 }

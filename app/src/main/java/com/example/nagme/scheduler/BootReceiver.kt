@@ -3,6 +3,7 @@ package com.example.nagme.scheduler
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.RoomNagRepository
 import kotlinx.coroutines.CoroutineScope
@@ -17,9 +18,16 @@ class BootReceiver : BroadcastReceiver() {
         intent: Intent
     ) {
 
+        Log.d(
+            "NagMeUpdate",
+            "BootReceiver received action=${intent.action}"
+        )
+
         if (
             intent.action !=
-            Intent.ACTION_BOOT_COMPLETED
+            Intent.ACTION_BOOT_COMPLETED &&
+            intent.action !=
+            Intent.ACTION_MY_PACKAGE_REPLACED
         ) {
             return
         }
@@ -52,6 +60,11 @@ class BootReceiver : BroadcastReceiver() {
                         context = appContext,
                         repository = repository
                     )
+
+                Log.d(
+                    "NagMeUpdate",
+                    "Rescheduling after ${intent.action}"
+                )
 
                 scheduler.reschedule()
 

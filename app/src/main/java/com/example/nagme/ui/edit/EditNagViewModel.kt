@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
+import com.example.nagme.data.OccurrenceStatus
 import com.example.nagme.data.RecurrenceType
 import com.example.nagme.data.RoomNagRepository
 import com.example.nagme.logic.NagEngine
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class EditNagViewModel(
     application: Application
@@ -38,6 +40,12 @@ class EditNagViewModel(
     val nag: StateFlow<Nag?> =
         _nag.asStateFlow()
 
+    private val _nextScheduledAt =
+        MutableStateFlow<Long?>(null)
+
+    val nextScheduledAt: StateFlow<Long?> =
+        _nextScheduledAt.asStateFlow()
+
     fun loadNag(
         nagId: Long
     ) {
@@ -48,6 +56,20 @@ class EditNagViewModel(
                 repository.getNag(
                     nagId
                 )
+
+            _nextScheduledAt.value =
+                repository
+                    .getOpenOccurrencesForNag(
+                        nagId
+                    )
+                    .filter {
+                        it.status ==
+                                OccurrenceStatus.SCHEDULED
+                    }
+                    .minByOrNull {
+                        it.scheduledAt
+                    }
+                    ?.scheduledAt
         }
     }
 
@@ -57,6 +79,10 @@ class EditNagViewModel(
         recurrenceType: RecurrenceType,
         selectedDays: Set<Int>,
         enabled: Boolean,
+        timePeriodIntervalMinutes: Int?,
+        timePeriodEndMinutesOfDay: Int?,
+        nagIntervalMinutes: Int?,
+        maxNagCount: Int?,
         onSaved: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -65,7 +91,9 @@ class EditNagViewModel(
             _nag.value
                 ?: return
 
-        if (text.isBlank()) {
+        if (
+            text.isBlank()
+        ) {
             onError(
                 "Enter something to nag you about."
             )
@@ -73,6 +101,8 @@ class EditNagViewModel(
         }
 
         if (
+            recurrenceType ==
+            RecurrenceType.ONCE &&
             scheduledAt <=
             System.currentTimeMillis()
         ) {
@@ -93,6 +123,86 @@ class EditNagViewModel(
             return
         }
 
+        if (
+            recurrenceType ==
+            RecurrenceType.DURING_TIME_PERIOD
+        ) {
+
+            if (
+                selectedDays.isEmpty()
+            ) {
+                onError(
+                    "Choose at least one day."
+                )
+                return
+            }
+
+            if (
+                timePeriodIntervalMinutes == null ||
+                timePeriodIntervalMinutes < 1
+            ) {
+                onError(
+                    "Choose how often this Nag should repeat during the time period."
+                )
+                return
+            }
+
+            if (
+                timePeriodEndMinutesOfDay == null
+            ) {
+                onError(
+                    "Choose an end time for the time period."
+                )
+                return
+            }
+
+            val startCalendar =
+                Calendar
+                    .getInstance()
+                    .apply {
+                        timeInMillis =
+                            scheduledAt
+                    }
+
+            val startMinutesOfDay =
+                startCalendar.get(
+                    Calendar.HOUR_OF_DAY
+                ) * 60 +
+                        startCalendar.get(
+                            Calendar.MINUTE
+                        )
+
+            if (
+                timePeriodEndMinutesOfDay <=
+                startMinutesOfDay
+            ) {
+                onError(
+                    "End time must be after the start time."
+                )
+                return
+            }
+        }
+
+        if (
+            nagIntervalMinutes != null &&
+            nagIntervalMinutes < 1
+        ) {
+            onError(
+                "Nag interval must be at least 1 minute."
+            )
+            return
+        }
+
+        if (
+            maxNagCount != null &&
+            maxNagCount < 1
+        ) {
+            onError(
+                "Maximum nags must be at least 1."
+            )
+            return
+        }
+
         viewModelScope.launch {
 
             try {
@@ -106,21 +216,53 @@ class EditNagViewModel(
                     existingNag.copy(
                         text =
                             text.trim(),
+
                         startDateTime =
                             scheduledAt,
+
                         recurrenceType =
                             recurrenceType,
+
                         selectedDays =
                             selectedDays,
+
                         enabled =
-                            enabled
+                            enabled,
+
+                        timePeriodIntervalMinutes =
+                            if (
+                                recurrenceType ==
+                                RecurrenceType.DURING_TIME_PERIOD
+                            ) {
+                                timePeriodIntervalMinutes
+                            } else {
+                                null
+                            },
+
+                        timePeriodEndMinutesOfDay =
+                            if (
+                                recurrenceType ==
+                                RecurrenceType.DURING_TIME_PERIOD
+                            ) {
+                                timePeriodEndMinutesOfDay
+                            } else {
+                                null
+                            },
+
+                        nagIntervalMinutes =
+                            nagIntervalMinutes,
+
+                        maxNagCount =
+                            maxNagCount
                     )
 
                 repository.updateNag(
                     updatedNag
                 )
 
-                if (enabled) {
+                if (
+                    enabled
+                ) {
 
                     engine
                         .createInitialOccurrence(

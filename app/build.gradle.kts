@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.nagme"
+        applicationId = "com.getnagme.nagme"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

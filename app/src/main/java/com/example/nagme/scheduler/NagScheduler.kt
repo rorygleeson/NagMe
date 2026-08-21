@@ -25,16 +25,31 @@ class NagScheduler(
         val nextOccurrence =
             repository.getNextDueOccurrence()
 
+        val nextNagAt =
+            nextOccurrence?.nextNagAt
+
         if (
-            nextOccurrence?.nextNagAt == null
+            nextNagAt == null
         ) {
             cancelCurrentAlarm()
             return
         }
 
+        val now =
+            System.currentTimeMillis()
+
+        val triggerAt =
+            if (
+                nextNagAt <= now
+            ) {
+                now + 1_000L
+            } else {
+                nextNagAt
+            }
+
         scheduleAlarm(
             triggerAtMillis =
-                nextOccurrence.nextNagAt
+                triggerAt
         )
     }
 

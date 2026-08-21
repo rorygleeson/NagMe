@@ -73,6 +73,148 @@ class CurrentNagViewModel(
         }
     }
 
+    fun updateNagIntervalMinutes(
+        newIntervalMinutes: Int,
+        onStopped: () -> Unit
+    ) {
+
+        val nag =
+            _uiState.value.nag
+                ?: return
+
+        val occurrence =
+            _uiState.value.occurrence
+                ?: return
+
+        val currentInterval =
+            nag.nagIntervalMinutes
+                ?: return
+
+        val resolvedInterval =
+            newIntervalMinutes
+                .coerceIn(
+                    1,
+                    1440
+                )
+
+        if (
+            resolvedInterval ==
+            currentInterval
+        ) {
+            return
+        }
+
+        viewModelScope.launch {
+
+            val now =
+                System.currentTimeMillis()
+
+            val updatedNag =
+                nag.copy(
+                    nagIntervalMinutes =
+                        resolvedInterval
+                )
+
+            repository.updateNag(
+                updatedNag
+            )
+
+            /*
+             * If the Nag is currently snoozed, preserve the
+             * snooze. The new interval will take effect after
+             * the snoozed Nag is next spoken.
+             */
+            if (
+                occurrence.snoozedUntil != null &&
+                occurrence.snoozedUntil > now
+            ) {
+
+                _uiState.value =
+                    _uiState.value.copy(
+                        nag = updatedNag
+                    )
+
+                scheduler.reschedule()
+
+                return@launch
+            }
+
+            val proposedNextNag =
+                now +
+                        resolvedInterval *
+                        60_000L
+
+            /*
+             * Keep the same behaviour as the normal Nag cycle:
+             * if the new interval would push the next Nag past
+             * this occurrence's expiry time, this occurrence
+             * is finished.
+             */
+            if (
+                occurrence.expiresAt != null &&
+                proposedNextNag >
+                occurrence.expiresAt
+            ) {
+
+                val stoppedOccurrence =
+                    occurrence.copy(
+                        status =
+                            OccurrenceStatus.EXPIRED,
+                        nextNagAt = null,
+                        snoozedUntil = null
+                    )
+
+                repository.updateOccurrence(
+                    stoppedOccurrence
+                )
+
+                nagNotificationManager.cancel(
+                    nag.id
+                )
+
+                engine.createNextRecurringOccurrence(
+                    nag = updatedNag,
+                    completedOccurrence =
+                        stoppedOccurrence,
+                    referenceTime =
+                        now
+                )
+
+                scheduler.reschedule()
+
+                _uiState.value =
+                    _uiState.value.copy(
+                        nag = updatedNag,
+                        occurrence = null
+                    )
+
+                onStopped()
+
+                return@launch
+            }
+
+            val updatedOccurrence =
+                occurrence.copy(
+                    nextNagAt =
+                        proposedNextNag,
+                    snoozedUntil = null
+                )
+
+            repository.updateOccurrence(
+                updatedOccurrence
+            )
+
+            _uiState.value =
+                _uiState.value.copy(
+                    nag = updatedNag,
+                    occurrence =
+                        updatedOccurrence
+                )
+
+            scheduler.reschedule()
+        }
+    }
+
     fun updateMaxNagCount(
         newMaxNagCount: Int,
         onStopped: () -> Unit
