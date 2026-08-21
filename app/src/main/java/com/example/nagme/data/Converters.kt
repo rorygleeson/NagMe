@@ -33,4 +33,13 @@ class Converters {
             .mapNotNull { it.toIntOrNull() }
             .toSet()
     }
+
+    @TypeConverter
+    fun utteranceSourceToString(value: UtteranceSource): String =
+        value.name
+
+    @TypeConverter
+    fun stringToUtteranceSource(value: String): UtteranceSource =
+        UtteranceSource.valueOf(value)
+
 }

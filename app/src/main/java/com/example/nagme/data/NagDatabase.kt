@@ -11,9 +11,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         Nag::class,
-        NagOccurrence::class
+        NagOccurrence::class,
+        NagUtterance::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -22,6 +23,8 @@ abstract class NagDatabase : RoomDatabase() {
     abstract fun nagDao(): NagDao
 
     abstract fun nagOccurrenceDao(): NagOccurrenceDao
+
+    abstract fun nagUtteranceDao(): NagUtteranceDao
 
     companion object {
 
@@ -51,6 +54,35 @@ abstract class NagDatabase : RoomDatabase() {
                 }
             }
 
+        private val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+
+                override fun migrate(
+                    db: SupportSQLiteDatabase
+                ) {
+
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS nag_utterances (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            occurrenceId INTEGER NOT NULL,
+                            nagNumber INTEGER NOT NULL,
+                            spokenText TEXT NOT NULL,
+                            source TEXT NOT NULL,
+                            spokenAt INTEGER NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+
+                    db.execSQL(
+                        """
+                        CREATE INDEX IF NOT EXISTS index_nag_utterances_occurrenceId
+                        ON nag_utterances (occurrenceId)
+                        """.trimIndent()
+                    )
+                }
+            }
+
         fun getInstance(
             context: Context
         ): NagDatabase {
@@ -65,7 +97,8 @@ abstract class NagDatabase : RoomDatabase() {
                             "nagme.db"
                         )
                             .addMigrations(
-                                MIGRATION_1_2
+                                MIGRATION_1_2,
+                                MIGRATION_2_3
                             )
                             .build()
                             .also {
