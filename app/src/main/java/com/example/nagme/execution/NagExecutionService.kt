@@ -17,9 +17,10 @@ import com.example.nagme.data.NagOccurrence
 import com.example.nagme.data.NagUtterance
 import com.example.nagme.data.NagUtteranceDao
 import com.example.nagme.data.OccurrenceStatus
-import com.example.nagme.data.UtteranceSource
 import com.example.nagme.data.RoomNagRepository
+import com.example.nagme.data.UtteranceSource
 import com.example.nagme.logic.NagEngine
+import com.example.nagme.network.NagMeApiClient
 import com.example.nagme.notification.NagNotificationManager
 import com.example.nagme.scheduler.NagScheduler
 import com.example.nagme.settings.UserSettingsRepository
@@ -30,6 +31,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 class NagExecutionService : Service() {
 
@@ -175,13 +177,6 @@ class NagExecutionService : Service() {
                         e
                     )
 
-                    /*
-                     * The occurrence remains in Room.
-                     *
-                     * Try to restore the next Android
-                     * wake-up rather than leaving the
-                     * database state stranded.
-                     */
                     try {
 
                         scheduler.reschedule()
@@ -206,11 +201,6 @@ class NagExecutionService : Service() {
             }
         }
 
-        /*
-         * If Android kills this service before we call
-         * stopSelf(startId), Android may recreate it and
-         * redeliver the most recent Intent.
-         */
         return START_REDELIVER_INTENT
     }
 
@@ -246,12 +236,6 @@ class NagExecutionService : Service() {
             return
         }
 
-        /*
-         * Read the user's notification preference once for
-         * this service execution.
-         *
-         * Speech is always processed regardless of this value.
-         */
         val showNagNotifications =
             settingsRepository
                 .settings
@@ -373,212 +357,291 @@ class NagExecutionService : Service() {
         processingSpeech =
             true
 
-        Log.d(
-            TAG,
-            "Speaking Nag ${item.nag.id}: ${item.nag.text}"
-        )
-
         /*
-         * This is the existing foreground-service
-         * notification required while speech is processed.
-         */
-        updateForegroundNotification(
-            item.nag.text
-        )
-
-        /*
-         * User-facing Nag notification.
+         * Resolve the text to speak.
          *
-         * We show the count that this speech is about to become,
-         * so the first spoken Nag displays as 1 rather than 0.
+         * AI is attempted first.
+         * Any failure, timeout or invalid response falls back
+         * to the original locally stored Nag text.
          */
-        if (
-            item.showNotification
-        ) {
+        serviceScope.launch {
 
-            nagNotificationManager
-                .show(
-                    nag =
-                        item.nag,
-                    occurrence =
-                        item.occurrence.copy(
-                            nagCount =
-                                item.occurrence
-                                    .nagCount + 1
+            var spokenText =
+                item.nag.text
+
+            var utteranceSource =
+                UtteranceSource.FALLBACK
+
+            try {
+
+                val previousUtterances =
+                    nagUtteranceDao
+                        .getForOccurrence(
+                            item.occurrence.id
                         )
-                )
+                        .map {
+                            it.spokenText
+                        }
+                        .takeLast(5)
 
-        } else {
+                val apiResult =
+                    withTimeout(
+                        AI_REQUEST_TIMEOUT_MS
+                    ) {
+
+                        NagMeApiClient.requestNagText(
+                            nagId =
+                                item.nag.id,
+                            occurrenceId =
+                                item.occurrence.id,
+                            nagNumber =
+                                item.occurrence.nagCount + 1,
+                            originalText =
+                                item.nag.text,
+                            personality =
+                                "default",
+                            previousUtterances =
+                                previousUtterances
+                        )
+                    }
+
+                if (
+                    apiResult.success &&
+                    !apiResult.text.isNullOrBlank() &&
+                    apiResult.source == "AI"
+                ) {
+
+                    spokenText =
+                        apiResult.text
+
+                    utteranceSource =
+                        UtteranceSource.AI
+
+                    Log.d(
+                        "NagMeApi",
+                        "Nag ${item.nag.id} AI SUCCESS: $spokenText"
+                    )
+
+                } else {
+
+                    Log.w(
+                        "NagMeApi",
+                        "Nag ${item.nag.id} returned no valid AI text; using fallback"
+                    )
+                }
+
+            } catch (
+                error: Exception
+            ) {
+
+                Log.w(
+                    "NagMeApi",
+                    "Nag ${item.nag.id} AI FAILED; using original fallback",
+                    error
+                )
+            }
 
             /*
-             * If the user has since disabled visual
-             * notifications, remove any existing one.
+             * From this point on, spokenText is the exact text
+             * NagMe will say and later store in nag_utterances.
              */
-            nagNotificationManager
-                .cancel(
-                    item.nag.id
-                )
-        }
 
-        speechManager.speakNag(
-            text =
-                item.nag.text
-        ) {
+            Log.d(
+                TAG,
+                "Speaking Nag ${item.nag.id} " +
+                        "source=$utteranceSource: $spokenText"
+            )
 
-            serviceScope.launch {
+            updateForegroundNotification(
+                spokenText
+            )
 
-                try {
+            if (
+                item.showNotification
+            ) {
 
-                    speechQueue
-                        .removeFirstOrNull()
+                /*
+                 * Keep the Nag/occurrence identity unchanged.
+                 *
+                 * Use the actual spoken text for the notification
+                 * while leaving the original Nag stored in Room.
+                 */
+                nagNotificationManager
+                    .show(
+                        nag =
+                            item.nag.copy(
+                                text =
+                                    spokenText
+                            ),
+                        occurrence =
+                            item.occurrence.copy(
+                                nagCount =
+                                    item.occurrence
+                                        .nagCount + 1
+                            )
+                    )
 
-                    val spokenAt =
-                        System.currentTimeMillis()
+            } else {
 
-                    /*
-                     * Best-effort history write.
-                     *
-                     * A failure here must never interrupt the
-                     * existing V1 Nag execution path.
-                     */
+                nagNotificationManager
+                    .cancel(
+                        item.nag.id
+                    )
+            }
+
+            speechManager.speakNag(
+                text =
+                    spokenText
+            ) {
+
+                serviceScope.launch {
+
                     try {
 
-                        nagUtteranceDao.insert(
-                            NagUtterance(
-                                occurrenceId =
-                                    item.occurrence.id,
-                                nagNumber =
-                                    item.occurrence.nagCount + 1,
-                                spokenText =
-                                    item.nag.text,
-                                source =
-                                    UtteranceSource.ORIGINAL,
-                                spokenAt =
-                                    spokenAt
+                        speechQueue
+                            .removeFirstOrNull()
+
+                        val spokenAt =
+                            System.currentTimeMillis()
+
+                        /*
+                         * Store exactly what was spoken and where
+                         * that text came from.
+                         *
+                         * AI       = Gemini-generated text.
+                         * FALLBACK = original local Nag because
+                         *            AI/cloud was unavailable or invalid.
+                         */
+                        try {
+
+                            nagUtteranceDao.insert(
+                                NagUtterance(
+                                    occurrenceId =
+                                        item.occurrence.id,
+                                    nagNumber =
+                                        item.occurrence.nagCount + 1,
+                                    spokenText =
+                                        spokenText,
+                                    source =
+                                        utteranceSource,
+                                    spokenAt =
+                                        spokenAt
+                                )
                             )
+
+                        } catch (
+                            utteranceError: Exception
+                        ) {
+
+                            Log.e(
+                                TAG,
+                                "Failed to record Nag utterance history",
+                                utteranceError
+                            )
+                        }
+
+                        /*
+                         * Re-read the Nag before calculating the
+                         * next cycle because the user may have
+                         * changed its settings while speech ran.
+                         */
+                        val latestNag =
+                            repository.getNag(
+                                item.nag.id
+                            ) ?: item.nag
+
+                        val updatedOccurrence =
+                            engine
+                                .recordNagSpoken(
+                                    nag =
+                                        latestNag,
+                                    occurrence =
+                                        item.occurrence,
+                                    spokenAt =
+                                        spokenAt
+                                )
+
+                        Log.d(
+                            TAG,
+                            "Recorded spoken Nag ${item.nag.id} " +
+                                    "source=$utteranceSource at $spokenAt"
                         )
 
+                        if (
+                            updatedOccurrence.status ==
+                            OccurrenceStatus.EXPIRED
+                        ) {
+
+                            nagNotificationManager
+                                .cancel(
+                                    item.nag.id
+                                )
+                        }
+
+                        processingSpeech =
+                            false
+
+                        if (
+                            speechQueue
+                                .isNotEmpty()
+                        ) {
+
+                            speakNext(
+                                startId =
+                                    startId
+                            )
+
+                        } else {
+
+                            scheduler
+                                .reschedule()
+
+                            Log.d(
+                                TAG,
+                                "Nag execution complete; next alarm rescheduled"
+                            )
+
+                            stopServiceCleanly(
+                                startId =
+                                    startId
+                            )
+                        }
+
                     } catch (
-                        utteranceError: Exception
+                        e: Exception
                     ) {
 
                         Log.e(
                             TAG,
-                            "Failed to record Nag utterance history",
-                            utteranceError
+                            "Failed after Nag speech",
+                            e
                         )
-                    }
 
-                    /*
-                     * Re-read the Nag from Room before calculating
-                     * the next cycle.
-                     *
-                     * The user may have changed Max Nags while
-                     * this speech was in progress, so item.nag
-                     * may contain stale settings.
-                     */
-                    val latestNag =
-                        repository.getNag(
-                            item.nag.id
-                        ) ?: item.nag
+                        processingSpeech =
+                            false
 
-                    val updatedOccurrence =
-                        engine
-                            .recordNagSpoken(
-                                nag =
-                                    latestNag,
-                                occurrence =
-                                    item.occurrence,
-                                spokenAt =
-                                    spokenAt
+                        try {
+
+                            scheduler
+                                .reschedule()
+
+                        } catch (
+                            schedulerError:
+                            Exception
+                        ) {
+
+                            Log.e(
+                                TAG,
+                                "Recovery reschedule failed",
+                                schedulerError
                             )
-
-                    Log.d(
-                        TAG,
-                        "Recorded spoken Nag ${item.nag.id} at $spokenAt"
-                    )
-
-                    /*
-                     * Max nags, maximum duration, or a
-                     * single-speech occurrence may finish here.
-                     *
-                     * In that case the user-facing notification
-                     * must disappear immediately.
-                     */
-                    if (
-                        updatedOccurrence.status ==
-                        OccurrenceStatus.EXPIRED
-                    ) {
-
-                        nagNotificationManager
-                            .cancel(
-                                item.nag.id
-                            )
-                    }
-
-                    processingSpeech =
-                        false
-
-                    if (
-                        speechQueue
-                            .isNotEmpty()
-                    ) {
-
-                        speakNext(
-                            startId =
-                                startId
-                        )
-
-                    } else {
-
-                        scheduler
-                            .reschedule()
-
-                        Log.d(
-                            TAG,
-                            "Nag execution complete; next alarm rescheduled"
-                        )
+                        }
 
                         stopServiceCleanly(
                             startId =
                                 startId
                         )
                     }
-
-                } catch (
-                    e: Exception
-                ) {
-
-                    Log.e(
-                        TAG,
-                        "Failed after Nag speech",
-                        e
-                    )
-
-                    processingSpeech =
-                        false
-
-                    try {
-
-                        scheduler
-                            .reschedule()
-
-                    } catch (
-                        schedulerError:
-                        Exception
-                    ) {
-
-                        Log.e(
-                            TAG,
-                            "Recovery reschedule failed",
-                            schedulerError
-                        )
-                    }
-
-                    stopServiceCleanly(
-                        startId =
-                            startId
-                    )
                 }
             }
         }
@@ -625,11 +688,6 @@ class NagExecutionService : Service() {
             STOP_FOREGROUND_REMOVE
         )
 
-        /*
-         * Important with START_REDELIVER_INTENT:
-         * tell Android this particular start has
-         * completed successfully.
-         */
         stopSelf(
             startId
         )
@@ -777,5 +835,12 @@ class NagExecutionService : Service() {
 
         private const val NOTIFICATION_ID =
             2001
+
+        /*
+         * Don't allow cloud/AI latency to hold a Nag indefinitely.
+         * On timeout, the existing local text is spoken.
+         */
+        private const val AI_REQUEST_TIMEOUT_MS =
+            8_000L
     }
 }
