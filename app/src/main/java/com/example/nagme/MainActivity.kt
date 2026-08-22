@@ -21,6 +21,7 @@ import com.example.nagme.auth.FirebaseAppCheckManager
 import com.example.nagme.auth.FirebaseAuthManager
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.RoomNagRepository
+import com.example.nagme.network.NagMeApiClient
 import com.example.nagme.notification.NagNotificationManager
 import com.example.nagme.scheduler.NagScheduler
 import com.example.nagme.settings.UserSettings
@@ -74,8 +75,7 @@ class MainActivity : ComponentActivity() {
          * Explicitly request an App Check token.
          *
          * This is currently a diagnostic check so we can prove
-         * Firebase accepts this NagMe app instance before wiring
-         * App Check into the future backend/LLM request flow.
+         * Firebase accepts this NagMe app instance.
          */
         FirebaseAppCheck
             .getInstance()
@@ -104,6 +104,10 @@ class MainActivity : ComponentActivity() {
         /*
          * Ensure this installation has a Firebase anonymous user.
          *
+         * Once authentication succeeds, make one temporary call
+         * to the real NagMe API client to prove the complete
+         * secure app -> Cloud Run path works.
+         *
          * Failure does not interrupt the normal NagMe reminder flow.
          */
         firebaseAuthManager.ensureAnonymousUser(
@@ -113,6 +117,29 @@ class MainActivity : ComponentActivity() {
                     "NagMeAuth",
                     "Anonymous Firebase UID: $uid"
                 )
+
+                lifecycleScope.launch(
+                    Dispatchers.IO
+                ) {
+                    try {
+
+                        val response =
+                            NagMeApiClient.requestNagText()
+
+                        Log.d(
+                            "NagMeApi",
+                            "Cloud API SUCCESS: $response"
+                        )
+
+                    } catch (error: Exception) {
+
+                        Log.e(
+                            "NagMeApi",
+                            "Cloud API FAILED",
+                            error
+                        )
+                    }
+                }
             },
             onFailure = { error ->
 
