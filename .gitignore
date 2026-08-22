@@ -15,3 +15,8 @@
 local.properties
 /.idea/deploymentTargetSelector.xml
 /keys/
+
+# Android signing keys
+keys/
+*.jks
+*.keystore
