@@ -516,60 +516,83 @@ private fun HistoryCard(
 
                     item.utterances.forEach { utterance ->
 
-                        Row(
+                        Card(
                             modifier =
                                 Modifier.fillMaxWidth(),
-                            verticalAlignment =
-                                Alignment.CenterVertically
+                            shape =
+                                RoundedCornerShape(
+                                    12.dp
+                                ),
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor =
+                                        NagMeUtteranceCard
+                                )
                         ) {
 
-                            Text(
-                                text =
-                                    "#${utterance.nagNumber}  ${formatTime(utterance.spokenAt)}",
-                                color =
-                                    NagMeLightText,
-                                fontWeight =
-                                    FontWeight.SemiBold,
-                                style =
-                                    MaterialTheme.typography
-                                        .bodySmall,
+                            Column(
                                 modifier =
-                                    Modifier.weight(1f)
-                            )
+                                    Modifier.padding(
+                                        12.dp
+                                    )
+                            ) {
 
-                            Text(
-                                text =
-                                    utterance.source.name,
-                                color =
-                                    sourceColor(
-                                        utterance.source
-                                    ),
-                                fontWeight =
-                                    FontWeight.Bold,
-                                style =
-                                    MaterialTheme.typography
-                                        .labelSmall
-                            )
+                                Row(
+                                    modifier =
+                                        Modifier.fillMaxWidth(),
+                                    verticalAlignment =
+                                        Alignment.CenterVertically
+                                ) {
+
+                                    Text(
+                                        text =
+                                            "#${utterance.nagNumber}  ${formatTime(utterance.spokenAt)}",
+                                        color =
+                                            NagMeLightText,
+                                        fontWeight =
+                                            FontWeight.SemiBold,
+                                        style =
+                                            MaterialTheme.typography
+                                                .bodySmall,
+                                        modifier =
+                                            Modifier.weight(1f)
+                                    )
+
+                                    Text(
+                                        text =
+                                            utterance.source.name,
+                                        color =
+                                            sourceColor(
+                                                utterance.source
+                                            ),
+                                        fontWeight =
+                                            FontWeight.Bold,
+                                        style =
+                                            MaterialTheme.typography
+                                                .labelSmall
+                                    )
+                                }
+
+                                Spacer(
+                                    modifier =
+                                        Modifier.height(5.dp)
+                                )
+
+                                Text(
+                                    text =
+                                        utterance.spokenText,
+                                    color =
+                                        Color.White,
+                                    style =
+                                        MaterialTheme.typography
+                                            .bodyMedium
+                                )
+                            }
                         }
 
                         Spacer(
                             modifier =
-                                Modifier.height(3.dp)
-                        )
-
-                        Text(
-                            text =
-                                utterance.spokenText,
-                            color =
-                                Color.White,
-                            style =
-                                MaterialTheme.typography
-                                    .bodyMedium
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(12.dp)
+                                Modifier.height(8.dp)
                         )
                     }
                 }
@@ -666,6 +689,9 @@ private val NagMeNavy =
 
 private val NagMeCard =
     Color(0xFF111C32)
+
+private val NagMeUtteranceCard =
+    Color(0xFF18253D)
 
 private val NagMeTeal =
     Color(0xFF21D4C2)
