@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "20521645171",
+    "project_id": "nagme-523c9",
+    "storage_bucket": "nagme-523c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20521645171:android:328f38fcf6b8a8b5efa606",
+        "android_client_info": {
+          "package_name": "com.getnagme.nagme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhXD_M2ERvc3vXzLF5KkLyBLONf6hScrc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

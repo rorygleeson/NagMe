@@ -1,11 +1,12 @@
 package com.example.nagme
 
-import android.content.Intent
 import android.app.AlarmManager
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
+import com.example.nagme.auth.FirebaseAppCheckManager
+import com.example.nagme.auth.FirebaseAuthManager
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.RoomNagRepository
 import com.example.nagme.notification.NagNotificationManager
@@ -31,10 +34,17 @@ import com.example.nagme.ui.home.HomeScreen
 import com.example.nagme.ui.onboarding.NameOnboardingScreen
 import com.example.nagme.ui.onboarding.VoiceOnboardingScreen
 import com.example.nagme.ui.settings.SettingsScreen
+import com.google.firebase.appcheck.FirebaseAppCheck
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private val firebaseAppCheckManager =
+        FirebaseAppCheckManager()
+
+    private val firebaseAuthManager =
+        FirebaseAuthManager()
 
     private var notificationNagId by
     mutableStateOf<Long?>(null)
@@ -46,6 +56,73 @@ class MainActivity : ComponentActivity() {
         savedInstanceState: Bundle?
     ) {
         super.onCreate(savedInstanceState)
+
+        /*
+         * Initialise Firebase App Check before making any
+         * Firebase-backed requests.
+         *
+         * Debug builds use the Firebase debug provider.
+         * Release builds use Google Play Integrity.
+         */
+        firebaseAppCheckManager.initialize(
+            isDebugBuild =
+                (applicationInfo.flags and
+                        android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        )
+
+        /*
+         * Explicitly request an App Check token.
+         *
+         * This is currently a diagnostic check so we can prove
+         * Firebase accepts this NagMe app instance before wiring
+         * App Check into the future backend/LLM request flow.
+         */
+        FirebaseAppCheck
+            .getInstance()
+            .getAppCheckToken(false)
+            .addOnSuccessListener { result ->
+
+                Log.d(
+                    "NagMeAppCheck",
+                    "App Check SUCCESS"
+                )
+
+                Log.d(
+                    "NagMeAppCheck",
+                    "Token received: ${result.token.take(20)}..."
+                )
+            }
+            .addOnFailureListener { error ->
+
+                Log.e(
+                    "NagMeAppCheck",
+                    "App Check FAILED",
+                    error
+                )
+            }
+
+        /*
+         * Ensure this installation has a Firebase anonymous user.
+         *
+         * Failure does not interrupt the normal NagMe reminder flow.
+         */
+        firebaseAuthManager.ensureAnonymousUser(
+            onSuccess = { uid ->
+
+                Log.d(
+                    "NagMeAuth",
+                    "Anonymous Firebase UID: $uid"
+                )
+            },
+            onFailure = { error ->
+
+                Log.w(
+                    "NagMeAuth",
+                    "Anonymous Firebase authentication failed",
+                    error
+                )
+            }
+        )
 
         requestExactAlarmPermissionIfNeeded()
 
@@ -317,10 +394,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
-
-
     private fun requestExactAlarmPermissionIfNeeded() {
 
         if (
@@ -353,6 +426,7 @@ class MainActivity : ComponentActivity() {
 
         startActivity(intent)
     }
+
     private fun rescheduleNagAlarms() {
 
         lifecycleScope.launch(
