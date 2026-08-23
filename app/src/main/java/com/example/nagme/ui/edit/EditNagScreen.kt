@@ -1739,8 +1739,13 @@ private fun aiPersonalityOptions():
         ),
 
         AiPersonality(
-            id = "paranoid_detective",
-            label = "Paranoid Detective"
+            id = "karen",
+            label = "Karen"
+        ),
+
+        AiPersonality(
+            id = "foul_mouthed_fury",
+            label = "Foul-Mouthed Fury"
         )
     )
 }
