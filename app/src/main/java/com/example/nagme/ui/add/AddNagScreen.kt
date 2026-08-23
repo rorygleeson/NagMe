@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,10 +17,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +32,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -110,6 +115,27 @@ fun AddNagScreen(
 
     var maxDurationMinutes by remember {
         mutableIntStateOf(60)
+    }
+
+    /*
+     * AI is deliberately OFF by default.
+     *
+     * When OFF, the personality control is hidden.
+     */
+    var aiEnabled by remember {
+        mutableStateOf(false)
+    }
+
+    /*
+     * Irish Mammy is the default personality if the
+     * user chooses to enable AI for this Nag.
+     */
+    var personality by remember {
+        mutableStateOf("irish_mammy")
+    }
+
+    var personalityMenuExpanded by remember {
+        mutableStateOf(false)
     }
 
     var errorMessage by remember {
@@ -777,6 +803,226 @@ fun AddNagScreen(
             )
         }
 
+        /*
+         * AI settings are intentionally per Nag.
+         *
+         * Existing/non-AI behaviour remains the default.
+         */
+        Spacer(
+            modifier =
+                Modifier.height(
+                    30.dp
+                )
+        )
+
+        SectionTitle(
+            text =
+                "AI NAGGING"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(
+                    10.dp
+                )
+        )
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth(),
+            verticalAlignment =
+                Alignment.CenterVertically
+        ) {
+
+            Column(
+                modifier =
+                    Modifier.weight(1f)
+            ) {
+
+                Text(
+                    text =
+                        "Use AI-generated nagging",
+                    color =
+                        Color.White,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .titleMedium
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(
+                            4.dp
+                        )
+                )
+
+                Text(
+                    text =
+                        if (
+                            aiEnabled
+                        ) {
+                            "NagMe will generate fresh, increasingly persistent wording."
+                        } else {
+                            "Off by default. NagMe will use your original reminder text."
+                        },
+                    color =
+                        NagMeMutedText,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .bodySmall
+                )
+            }
+
+            Switch(
+                checked =
+                    aiEnabled,
+                onCheckedChange = { enabled ->
+
+                    aiEnabled =
+                        enabled
+
+                    if (
+                        !enabled
+                    ) {
+                        personalityMenuExpanded =
+                            false
+                    }
+                }
+            )
+        }
+
+        /*
+         * Hide personality completely while AI is disabled.
+         */
+        if (
+            aiEnabled
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        22.dp
+                    )
+            )
+
+            Text(
+                text =
+                    "PERSONALITY",
+                color =
+                    NagMeMutedText,
+                fontWeight =
+                    FontWeight.Bold,
+                style =
+                    MaterialTheme
+                        .typography
+                        .labelMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(
+                        8.dp
+                    )
+            )
+
+            val selectedPersonality =
+                aiPersonalityOptions()
+                    .firstOrNull {
+                        it.id ==
+                                personality
+                    }
+                    ?: aiPersonalityOptions()
+                        .first()
+
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth()
+            ) {
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeLightText
+                            ),
+                    onClick = {
+
+                        personalityMenuExpanded =
+                            true
+                    }
+                ) {
+
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text =
+                                selectedPersonality.label,
+                            modifier =
+                                Modifier.weight(1f),
+                            fontWeight =
+                                FontWeight.SemiBold
+                        )
+
+                        Text(
+                            text =
+                                "▼",
+                            color =
+                                NagMeMutedText
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded =
+                        personalityMenuExpanded,
+                    onDismissRequest = {
+
+                        personalityMenuExpanded =
+                            false
+                    }
+                ) {
+
+                    aiPersonalityOptions()
+                        .forEach { option ->
+
+                            DropdownMenuItem(
+                                text = {
+
+                                    Text(
+                                        text =
+                                            option.label
+                                    )
+                                },
+                                onClick = {
+
+                                    personality =
+                                        option.id
+
+                                    personalityMenuExpanded =
+                                        false
+                                }
+                            )
+                        }
+                }
+            }
+        }
+
         Spacer(
             modifier =
                 Modifier.height(
@@ -1122,6 +1368,15 @@ fun AddNagScreen(
                         resolvedMaxNagCount,
                     maxNagDurationMinutes =
                         resolvedMaxDuration,
+
+                    /*
+                     * New per-Nag AI settings.
+                     */
+                    aiEnabled =
+                        aiEnabled,
+                    personality =
+                        personality,
+
                     onSaved =
                         onSaved,
                     onError = { error ->
@@ -1400,6 +1655,74 @@ private fun recurrenceOptions():
 
         RecurrenceType.DURING_TIME_PERIOD to
                 "During time period"
+    )
+}
+
+/*
+ * Stable IDs are deliberately separate from the
+ * user-facing personality names.
+ *
+ * The IDs will later be sent to Cloud Run/Gemini.
+ */
+private data class AiPersonality(
+    val id: String,
+    val label: String
+)
+
+private fun aiPersonalityOptions():
+        List<AiPersonality> {
+
+    return listOf(
+
+        AiPersonality(
+            id = "irish_mammy",
+            label = "Irish Mammy"
+        ),
+
+        AiPersonality(
+            id = "corporate_guru",
+            label = "Corporate Guru"
+        ),
+
+        AiPersonality(
+            id = "aussie_mate",
+            label = "Aussie Mate"
+        ),
+
+        AiPersonality(
+            id = "posh_butler",
+            label = "Posh Butler"
+        ),
+
+        AiPersonality(
+            id = "passive_aggressive",
+            label = "Passive Aggressive"
+        ),
+
+        AiPersonality(
+            id = "needy_ex",
+            label = "Needy Ex"
+        ),
+
+        AiPersonality(
+            id = "disappointed_dad",
+            label = "Disappointed Dad"
+        ),
+
+        AiPersonality(
+            id = "nosy_neighbour",
+            label = "Nosy Neighbour"
+        ),
+
+        AiPersonality(
+            id = "drama_queen",
+            label = "Drama Queen"
+        ),
+
+        AiPersonality(
+            id = "paranoid_detective",
+            label = "Paranoid Detective"
+        )
     )
 }
 

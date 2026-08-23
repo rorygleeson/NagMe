@@ -62,6 +62,8 @@ class AddNagViewModel(
         stopWhenDone: Boolean,
         maxNagCount: Int?,
         maxNagDurationMinutes: Int?,
+        aiEnabled: Boolean,
+        personality: String,
         onSaved: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -232,7 +234,13 @@ class AddNagViewModel(
                             maxNagCount,
 
                         maxNagDurationMinutes =
-                            maxNagDurationMinutes
+                            maxNagDurationMinutes,
+
+                        aiEnabled =
+                            aiEnabled,
+
+                        personality =
+                            personality
                     )
 
                 val nagId =

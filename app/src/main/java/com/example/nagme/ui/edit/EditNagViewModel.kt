@@ -83,6 +83,8 @@ class EditNagViewModel(
         timePeriodEndMinutesOfDay: Int?,
         nagIntervalMinutes: Int?,
         maxNagCount: Int?,
+        aiEnabled: Boolean,
+        personality: String,
         onSaved: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -253,7 +255,13 @@ class EditNagViewModel(
                             nagIntervalMinutes,
 
                         maxNagCount =
-                            maxNagCount
+                            maxNagCount,
+
+                        aiEnabled =
+                            aiEnabled,
+
+                        personality =
+                            personality
                     )
 
                 repository.updateNag(

@@ -360,9 +360,18 @@ class NagExecutionService : Service() {
         /*
          * Resolve the text to speak.
          *
-         * AI is attempted first.
-         * Any failure, timeout or invalid response falls back
-         * to the original locally stored Nag text.
+         * AI is opt-in per Nag.
+         *
+         * AI OFF:
+         * - do not call the cloud API
+         * - speak the locally stored original text
+         * - record the utterance as ORIGINAL
+         *
+         * AI ON:
+         * - use the existing cloud/AI path
+         * - use the Nag's selected personality
+         * - any failure, timeout or invalid response falls
+         *   back to the original locally stored text
          */
         serviceScope.launch {
 
@@ -370,74 +379,101 @@ class NagExecutionService : Service() {
                 item.nag.text
 
             var utteranceSource =
-                UtteranceSource.FALLBACK
+                UtteranceSource.ORIGINAL
 
-            try {
+            if (
+                item.nag.aiEnabled
+            ) {
 
-                val previousUtterances =
-                    nagUtteranceDao
-                        .getForOccurrence(
-                            item.occurrence.id
-                        )
-                        .map {
-                            it.spokenText
+                /*
+                 * AI was explicitly requested.
+                 *
+                 * From this point until AI succeeds,
+                 * original local text is the fallback.
+                 */
+                utteranceSource =
+                    UtteranceSource.FALLBACK
+
+                try {
+
+                    val previousUtterances =
+                        nagUtteranceDao
+                            .getForOccurrence(
+                                item.occurrence.id
+                            )
+                            .map {
+                                it.spokenText
+                            }
+                            .takeLast(5)
+
+                    val apiResult =
+                        withTimeout(
+                            AI_REQUEST_TIMEOUT_MS
+                        ) {
+
+                            NagMeApiClient.requestNagText(
+                                nagId =
+                                    item.nag.id,
+                                occurrenceId =
+                                    item.occurrence.id,
+                                nagNumber =
+                                    item.occurrence.nagCount + 1,
+                                originalText =
+                                    item.nag.text,
+                                personality =
+                                    item.nag.personality,
+                                previousUtterances =
+                                    previousUtterances
+                            )
                         }
-                        .takeLast(5)
 
-                val apiResult =
-                    withTimeout(
-                        AI_REQUEST_TIMEOUT_MS
+                    if (
+                        apiResult.success &&
+                        !apiResult.text.isNullOrBlank() &&
+                        apiResult.source == "AI"
                     ) {
 
-                        NagMeApiClient.requestNagText(
-                            nagId =
-                                item.nag.id,
-                            occurrenceId =
-                                item.occurrence.id,
-                            nagNumber =
-                                item.occurrence.nagCount + 1,
-                            originalText =
-                                item.nag.text,
-                            personality =
-                                "default",
-                            previousUtterances =
-                                previousUtterances
+                        spokenText =
+                            apiResult.text
+
+                        utteranceSource =
+                            UtteranceSource.AI
+
+                        Log.d(
+                            "NagMeApi",
+                            "Nag ${item.nag.id} AI SUCCESS " +
+                                    "personality=${item.nag.personality}: $spokenText"
+                        )
+
+                    } else {
+
+                        Log.w(
+                            "NagMeApi",
+                            "Nag ${item.nag.id} returned no valid AI text; using fallback"
                         )
                     }
 
-                if (
-                    apiResult.success &&
-                    !apiResult.text.isNullOrBlank() &&
-                    apiResult.source == "AI"
+                } catch (
+                    error: Exception
                 ) {
-
-                    spokenText =
-                        apiResult.text
-
-                    utteranceSource =
-                        UtteranceSource.AI
-
-                    Log.d(
-                        "NagMeApi",
-                        "Nag ${item.nag.id} AI SUCCESS: $spokenText"
-                    )
-
-                } else {
 
                     Log.w(
                         "NagMeApi",
-                        "Nag ${item.nag.id} returned no valid AI text; using fallback"
+                        "Nag ${item.nag.id} AI FAILED; using original fallback",
+                        error
                     )
                 }
 
-            } catch (
-                error: Exception
-            ) {
+            } else {
 
-                Log.w(
+                /*
+                 * AI is disabled for this Nag.
+                 *
+                 * Deliberately do not call NagMeApiClient.
+                 */
+                Log.d(
                     "NagMeApi",
-                    "Nag ${item.nag.id} AI FAILED; using original fallback",
-                    error
+                    "Nag ${item.nag.id} AI disabled; using original text"
                 )
             }
 
@@ -508,8 +544,13 @@ class NagExecutionService : Service() {
                          * Store exactly what was spoken and where
                          * that text came from.
                          *
+                         * ORIGINAL = AI was disabled and normal
+                         *            local NagMe wording was used.
+                         *
                          * AI       = Gemini-generated text.
-                         * FALLBACK = original local Nag because
+                         *
+                         * FALLBACK = AI was requested, but original
+                         *            local text was used because
                          *            AI/cloud was unavailable or invalid.
                          */
                         try {

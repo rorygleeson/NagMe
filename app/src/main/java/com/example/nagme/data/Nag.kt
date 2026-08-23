@@ -45,6 +45,14 @@ data class Nag(
     // null = use the global default voice.
     val voiceId: String? = null,
 
+    // AI-generated nag wording is opt-in for each individual Nag.
+    // false = use the original NagMe wording and do not use AI.
+    val aiEnabled: Boolean = false,
+
+    // Stable personality ID sent to the AI backend.
+    // This is only used when aiEnabled is true.
+    val personality: String = "irish_mammy",
+
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()

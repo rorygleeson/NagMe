@@ -119,11 +119,6 @@ class CurrentNagViewModel(
                 updatedNag
             )
 
-            /*
-             * If the Nag is currently snoozed, preserve the
-             * snooze. The new interval will take effect after
-             * the snoozed Nag is next spoken.
-             */
             if (
                 occurrence.snoozedUntil != null &&
                 occurrence.snoozedUntil > now
@@ -144,12 +139,6 @@ class CurrentNagViewModel(
                         resolvedInterval *
                         60_000L
 
-            /*
-             * Keep the same behaviour as the normal Nag cycle:
-             * if the new interval would push the next Nag past
-             * this occurrence's expiry time, this occurrence
-             * is finished.
-             */
             if (
                 occurrence.expiresAt != null &&
                 proposedNextNag >
@@ -264,11 +253,6 @@ class CurrentNagViewModel(
                 updatedNag
             )
 
-            /*
-             * If the user reduces the maximum to the number
-             * already spoken, the current occurrence has
-             * reached its new limit and must stop immediately.
-             */
             if (
                 occurrence.nagCount >=
                 resolvedMax
@@ -316,6 +300,44 @@ class CurrentNagViewModel(
                     nag = updatedNag
                 )
 
+            scheduler.reschedule()
+        }
+    }
+
+    fun updateAiSettings(
+        aiEnabled: Boolean,
+        personality: String
+    ) {
+
+        val nag =
+            _uiState.value.nag
+                ?: return
+
+        viewModelScope.launch {
+
+            val updatedNag =
+                nag.copy(
+                    aiEnabled =
+                        aiEnabled,
+                    personality =
+                        personality
+                )
+
+            repository.updateNag(
+                updatedNag
+            )
+
+            _uiState.value =
+                _uiState.value.copy(
+                    nag = updatedNag
+                )
+
+            /*
+             * Do not alter the current active occurrence.
+             *
+             * The next scheduled spoken Nag will re-read the Nag
+             * from Room and use these updated AI settings.
+             */
             scheduler.reschedule()
         }
     }

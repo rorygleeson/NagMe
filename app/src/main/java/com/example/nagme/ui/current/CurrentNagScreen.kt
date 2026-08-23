@@ -3,6 +3,7 @@ package com.example.nagme.ui.current
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,19 +12,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -164,10 +174,19 @@ fun CurrentNagScreen(
             val occurrence =
                 state.occurrence!!
 
+            var personalityMenuExpanded by remember(
+                nag.id
+            ) {
+                mutableStateOf(false)
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(NagMeNavy)
+                    .verticalScroll(
+                        rememberScrollState()
+                    )
                     .padding(24.dp)
             ) {
 
@@ -441,6 +460,234 @@ fun CurrentNagScreen(
                                 fontWeight =
                                     FontWeight.SemiBold
                             )
+                        }
+                    }
+                }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(20.dp)
+                )
+
+                Text(
+                    text = "AI NAGGING",
+                    color = NagMeTeal,
+                    fontWeight = FontWeight.Bold,
+                    style =
+                        MaterialTheme.typography
+                            .titleMedium
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(10.dp)
+                )
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        RoundedCornerShape(
+                            20.dp
+                        ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                NagMeInfoCard
+                        )
+                ) {
+
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
+                        Column(
+                            modifier =
+                                Modifier.weight(1f)
+                        ) {
+
+                            Text(
+                                text =
+                                    "Use AI-generated nagging",
+                                color =
+                                    Color.White,
+                                fontWeight =
+                                    FontWeight.SemiBold
+                            )
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(3.dp)
+                            )
+
+                            Text(
+                                text =
+                                    if (
+                                        nag.aiEnabled
+                                    ) {
+                                        "AI will be used for the next nag."
+                                    } else {
+                                        "Off. Using your original reminder text."
+                                    },
+                                color =
+                                    NagMeMutedText,
+                                style =
+                                    MaterialTheme.typography
+                                        .bodySmall
+                            )
+                        }
+
+                        Switch(
+                            checked =
+                                nag.aiEnabled,
+                            onCheckedChange = { enabled ->
+
+                                if (
+                                    !enabled
+                                ) {
+                                    personalityMenuExpanded =
+                                        false
+                                }
+
+                                viewModel.updateAiSettings(
+                                    aiEnabled =
+                                        enabled,
+                                    personality =
+                                        nag.personality
+                                )
+                            },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor =
+                                        NagMeDarkText,
+                                    checkedTrackColor =
+                                        NagMeTeal,
+                                    uncheckedThumbColor =
+                                        NagMeMutedText,
+                                    uncheckedTrackColor =
+                                        NagMeInfoCard
+                                )
+                        )
+                    }
+                }
+
+                if (
+                    nag.aiEnabled
+                ) {
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(16.dp)
+                    )
+
+                    Text(
+                        text = "Personality",
+                        color =
+                            NagMeLightText,
+                        fontWeight =
+                            FontWeight.SemiBold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp)
+                    )
+
+                    val selectedPersonality =
+                        aiPersonalityOptions()
+                            .firstOrNull { option ->
+                                option.id ==
+                                        nag.personality
+                            }
+                            ?: aiPersonalityOptions()
+                                .first()
+
+                    Box(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                    ) {
+
+                        OutlinedButton(
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            shape =
+                                RoundedCornerShape(
+                                    16.dp
+                                ),
+                            colors =
+                                ButtonDefaults
+                                    .outlinedButtonColors(
+                                        contentColor =
+                                            NagMeLightText
+                                    ),
+                            onClick = {
+                                personalityMenuExpanded =
+                                    true
+                            }
+                        ) {
+
+                            Row(
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+                                verticalAlignment =
+                                    Alignment.CenterVertically
+                            ) {
+
+                                Text(
+                                    text =
+                                        selectedPersonality.label,
+                                    modifier =
+                                        Modifier.weight(1f),
+                                    fontWeight =
+                                        FontWeight.SemiBold
+                                )
+
+                                Text(
+                                    text = "▼",
+                                    color =
+                                        NagMeMutedText
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded =
+                                personalityMenuExpanded,
+                            onDismissRequest = {
+                                personalityMenuExpanded =
+                                    false
+                            }
+                        ) {
+
+                            aiPersonalityOptions()
+                                .forEach { option ->
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text =
+                                                    option.label
+                                            )
+                                        },
+                                        onClick = {
+
+                                            personalityMenuExpanded =
+                                                false
+
+                                            viewModel.updateAiSettings(
+                                                aiEnabled =
+                                                    true,
+                                                personality =
+                                                    option.id
+                                            )
+                                        }
+                                    )
+                                }
                         }
                     }
                 }
@@ -767,6 +1014,11 @@ fun CurrentNagScreen(
                         }
                     )
                 }
+
+                Spacer(
+                    modifier =
+                        Modifier.height(16.dp)
+                )
             }
         }
     }
@@ -856,6 +1108,68 @@ private fun SecondaryButton(
                 FontWeight.SemiBold
         )
     }
+}
+
+private data class AiPersonality(
+    val id: String,
+    val label: String
+)
+
+private fun aiPersonalityOptions():
+        List<AiPersonality> {
+
+    return listOf(
+
+        AiPersonality(
+            id = "irish_mammy",
+            label = "Irish Mammy"
+        ),
+
+        AiPersonality(
+            id = "corporate_guru",
+            label = "Corporate Guru"
+        ),
+
+        AiPersonality(
+            id = "aussie_mate",
+            label = "Aussie Mate"
+        ),
+
+        AiPersonality(
+            id = "posh_butler",
+            label = "Posh Butler"
+        ),
+
+        AiPersonality(
+            id = "passive_aggressive",
+            label = "Passive Aggressive"
+        ),
+
+        AiPersonality(
+            id = "needy_ex",
+            label = "Needy Ex"
+        ),
+
+        AiPersonality(
+            id = "disappointed_dad",
+            label = "Disappointed Dad"
+        ),
+
+        AiPersonality(
+            id = "nosy_neighbour",
+            label = "Nosy Neighbour"
+        ),
+
+        AiPersonality(
+            id = "drama_queen",
+            label = "Drama Queen"
+        ),
+
+        AiPersonality(
+            id = "paranoid_detective",
+            label = "Paranoid Detective"
+        )
+    )
 }
 
 private fun recurrenceDisplayText(

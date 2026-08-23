@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -108,6 +111,18 @@ fun EditNagScreen(
         mutableStateOf<Int?>(null)
     }
 
+    var aiEnabled by remember {
+        mutableStateOf(false)
+    }
+
+    var personality by remember {
+        mutableStateOf("irish_mammy")
+    }
+
+    var personalityMenuExpanded by remember {
+        mutableStateOf(false)
+    }
+
     var errorMessage by remember {
         mutableStateOf<String?>(null)
     }
@@ -152,6 +167,12 @@ fun EditNagScreen(
 
             maxNagCount =
                 it.maxNagCount
+
+            aiEnabled =
+                it.aiEnabled
+
+            personality =
+                it.personality
         }
     }
 
@@ -1028,6 +1049,226 @@ fun EditNagScreen(
         )
 
         SectionTitle(
+            text = "AI NAGGING"
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(10.dp)
+        )
+
+        Card(
+            modifier =
+                Modifier.fillMaxWidth(),
+            shape =
+                RoundedCornerShape(
+                    20.dp
+                ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        NagMeCard
+                )
+        ) {
+
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                verticalAlignment =
+                    Alignment.CenterVertically
+            ) {
+
+                Column(
+                    modifier =
+                        Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text =
+                            "Use AI-generated nagging",
+                        color =
+                            Color.White,
+                        fontWeight =
+                            FontWeight.SemiBold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(3.dp)
+                    )
+
+                    Text(
+                        text =
+                            if (
+                                aiEnabled
+                            ) {
+                                "NagMe will generate fresh, increasingly persistent wording."
+                            } else {
+                                "Off. NagMe will use your original reminder text."
+                            },
+                        color =
+                            NagMeMutedText,
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall
+                    )
+                }
+
+                Switch(
+                    checked =
+                        aiEnabled,
+                    onCheckedChange = {
+                        aiEnabled = it
+
+                        if (
+                            !it
+                        ) {
+                            personalityMenuExpanded =
+                                false
+                        }
+                    },
+                    colors =
+                        SwitchDefaults.colors(
+                            checkedThumbColor =
+                                NagMeDarkText,
+                            checkedTrackColor =
+                                NagMeTeal,
+                            uncheckedThumbColor =
+                                NagMeMutedText,
+                            uncheckedTrackColor =
+                                NagMeField,
+                            uncheckedBorderColor =
+                                NagMeBorder
+                        )
+                )
+            }
+        }
+
+        if (
+            aiEnabled
+        ) {
+
+            Spacer(
+                modifier =
+                    Modifier.height(18.dp)
+            )
+
+            Text(
+                text =
+                    "PERSONALITY",
+                color =
+                    NagMeMutedText,
+                fontWeight =
+                    FontWeight.Bold,
+                style =
+                    MaterialTheme.typography
+                        .labelMedium
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp)
+            )
+
+            val selectedPersonality =
+                aiPersonalityOptions()
+                    .firstOrNull {
+                        it.id ==
+                                personality
+                    }
+                    ?: aiPersonalityOptions()
+                        .first()
+
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth()
+            ) {
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeLightText
+                            ),
+                    onClick = {
+                        personalityMenuExpanded =
+                            true
+                    }
+                ) {
+
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text =
+                                selectedPersonality.label,
+                            modifier =
+                                Modifier.weight(1f),
+                            fontWeight =
+                                FontWeight.SemiBold
+                        )
+
+                        Text(
+                            text =
+                                "▼",
+                            color =
+                                NagMeMutedText
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded =
+                        personalityMenuExpanded,
+                    onDismissRequest = {
+                        personalityMenuExpanded =
+                            false
+                    }
+                ) {
+
+                    aiPersonalityOptions()
+                        .forEach { option ->
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text =
+                                            option.label
+                                    )
+                                },
+                                onClick = {
+
+                                    personality =
+                                        option.id
+
+                                    personalityMenuExpanded =
+                                        false
+                                }
+                            )
+                        }
+                }
+            }
+        }
+
+        Spacer(
+            modifier =
+                Modifier.height(30.dp)
+        )
+
+        SectionTitle(
             text = "STATUS"
         )
 
@@ -1173,6 +1414,10 @@ fun EditNagScreen(
                         nagIntervalMinutes,
                     maxNagCount =
                         maxNagCount,
+                    aiEnabled =
+                        aiEnabled,
+                    personality =
+                        personality,
                     onSaved =
                         onSaved,
                     onError = { error ->
@@ -1436,6 +1681,68 @@ private fun SecondaryButton(
                 FontWeight.SemiBold
         )
     }
+}
+
+private data class AiPersonality(
+    val id: String,
+    val label: String
+)
+
+private fun aiPersonalityOptions():
+        List<AiPersonality> {
+
+    return listOf(
+
+        AiPersonality(
+            id = "irish_mammy",
+            label = "Irish Mammy"
+        ),
+
+        AiPersonality(
+            id = "corporate_guru",
+            label = "Corporate Guru"
+        ),
+
+        AiPersonality(
+            id = "aussie_mate",
+            label = "Aussie Mate"
+        ),
+
+        AiPersonality(
+            id = "posh_butler",
+            label = "Posh Butler"
+        ),
+
+        AiPersonality(
+            id = "passive_aggressive",
+            label = "Passive Aggressive"
+        ),
+
+        AiPersonality(
+            id = "needy_ex",
+            label = "Needy Ex"
+        ),
+
+        AiPersonality(
+            id = "disappointed_dad",
+            label = "Disappointed Dad"
+        ),
+
+        AiPersonality(
+            id = "nosy_neighbour",
+            label = "Nosy Neighbour"
+        ),
+
+        AiPersonality(
+            id = "drama_queen",
+            label = "Drama Queen"
+        ),
+
+        AiPersonality(
+            id = "paranoid_detective",
+            label = "Paranoid Detective"
+        )
+    )
 }
 
 private fun recurrenceOptions():

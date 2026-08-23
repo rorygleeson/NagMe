@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NagOccurrence::class,
         NagUtterance::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,6 +83,29 @@ abstract class NagDatabase : RoomDatabase() {
                 }
             }
 
+        private val MIGRATION_3_4 =
+            object : Migration(3, 4) {
+
+                override fun migrate(
+                    db: SupportSQLiteDatabase
+                ) {
+
+                    db.execSQL(
+                        """
+                        ALTER TABLE nags
+                        ADD COLUMN aiEnabled INTEGER NOT NULL DEFAULT 0
+                        """.trimIndent()
+                    )
+
+                    db.execSQL(
+                        """
+                        ALTER TABLE nags
+                        ADD COLUMN personality TEXT NOT NULL DEFAULT 'irish_mammy'
+                        """.trimIndent()
+                    )
+                }
+            }
+
         fun getInstance(
             context: Context
         ): NagDatabase {
@@ -98,7 +121,8 @@ abstract class NagDatabase : RoomDatabase() {
                         )
                             .addMigrations(
                                 MIGRATION_1_2,
-                                MIGRATION_2_3
+                                MIGRATION_2_3,
+                                MIGRATION_3_4
                             )
                             .build()
                             .also {
