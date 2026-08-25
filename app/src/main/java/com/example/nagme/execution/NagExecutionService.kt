@@ -1,16 +1,13 @@
 package com.example.nagme.execution
 
-import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.core.content.ContextCompat
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
 import com.example.nagme.data.NagOccurrence
@@ -128,7 +125,7 @@ class NagExecutionService : Service() {
         startForeground(
             NOTIFICATION_ID,
             createNotification(
-                "Processing due Nag..."
+                "Preparing reminder..."
             )
         )
 
@@ -488,10 +485,6 @@ class NagExecutionService : Service() {
                         "source=$utteranceSource: $spokenText"
             )
 
-            updateForegroundNotification(
-                spokenText
-            )
-
             if (
                 item.showNotification
             ) {
@@ -769,13 +762,26 @@ class NagExecutionService : Service() {
             val channel =
                 NotificationChannel(
                     CHANNEL_ID,
-                    "NagMe active nags",
+                    "NagMe execution",
                     NotificationManager
-                        .IMPORTANCE_HIGH
+                        .IMPORTANCE_LOW
                 ).apply {
 
                     description =
-                        "Shown while NagMe is speaking a scheduled nag."
+                        "Keeps NagMe running while a scheduled reminder is prepared and spoken."
+
+                    setSound(
+                        null,
+                        null
+                    )
+
+                    enableVibration(
+                        false
+                    )
+
+                    setShowBadge(
+                        false
+                    )
                 }
 
             getSystemService(
@@ -826,38 +832,19 @@ class NagExecutionService : Service() {
             .setOngoing(
                 true
             )
-            .build()
-    }
-
-    private fun updateForegroundNotification(
-        text: String
-    ) {
-
-        if (
-            Build.VERSION.SDK_INT >=
-            Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat
-                .checkSelfPermission(
-                    this,
-                    Manifest.permission
-                        .POST_NOTIFICATIONS
-                ) !=
-            PackageManager
-                .PERMISSION_GRANTED
-        ) {
-
-            return
-        }
-
-        getSystemService(
-            NotificationManager::class.java
-        )
-            .notify(
-                NOTIFICATION_ID,
-                createNotification(
-                    text
-                )
+            .setOnlyAlertOnce(
+                true
             )
+            .setPriority(
+                Notification.PRIORITY_LOW
+            )
+            .setSound(
+                null
+            )
+            .setVibrate(
+                null
+            )
+            .build()
     }
 
     private data class SpeechItem(
@@ -872,7 +859,7 @@ class NagExecutionService : Service() {
             "NagMe"
 
         private const val CHANNEL_ID =
-            "nagme_active_nag"
+            "nagme_execution"
 
         private const val NOTIFICATION_ID =
             2001

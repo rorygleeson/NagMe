@@ -24,8 +24,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -339,6 +337,23 @@ fun CurrentNagScreen(
                     ) {
 
                         InfoLabel(
+                            text = "NAG"
+                        )
+
+                        Text(
+                            text = nag.text,
+                            color =
+                                Color.White,
+                            fontWeight =
+                                FontWeight.SemiBold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(18.dp)
+                        )
+
+                        InfoLabel(
                             text = "STARTED"
                         )
 
@@ -461,118 +476,6 @@ fun CurrentNagScreen(
                                     FontWeight.SemiBold
                             )
                         }
-                    }
-                }
-
-                Spacer(
-                    modifier =
-                        Modifier.height(20.dp)
-                )
-
-                Text(
-                    text = "AI NAGGING",
-                    color = NagMeTeal,
-                    fontWeight = FontWeight.Bold,
-                    style =
-                        MaterialTheme.typography
-                            .titleMedium
-                )
-
-                Spacer(
-                    modifier =
-                        Modifier.height(10.dp)
-                )
-
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        RoundedCornerShape(
-                            20.dp
-                        ),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                NagMeInfoCard
-                        )
-                ) {
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(18.dp),
-                        verticalAlignment =
-                            Alignment.CenterVertically
-                    ) {
-
-                        Column(
-                            modifier =
-                                Modifier.weight(1f)
-                        ) {
-
-                            Text(
-                                text =
-                                    "Use AI-generated nagging",
-                                color =
-                                    Color.White,
-                                fontWeight =
-                                    FontWeight.SemiBold
-                            )
-
-                            Spacer(
-                                modifier =
-                                    Modifier.height(3.dp)
-                            )
-
-                            Text(
-                                text =
-                                    if (
-                                        nag.aiEnabled
-                                    ) {
-                                        "AI will be used for the next nag."
-                                    } else {
-                                        "Off. Using your original reminder text."
-                                    },
-                                color =
-                                    NagMeMutedText,
-                                style =
-                                    MaterialTheme.typography
-                                        .bodySmall
-                            )
-                        }
-
-                        Switch(
-                            checked =
-                                nag.aiEnabled,
-                            onCheckedChange = { enabled ->
-
-                                if (
-                                    !enabled
-                                ) {
-                                    personalityMenuExpanded =
-                                        false
-                                }
-
-                                viewModel.updateAiSettings(
-                                    aiEnabled =
-                                        enabled,
-                                    personality =
-                                        nag.personality
-                                )
-                            },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor =
-                                        NagMeDarkText,
-                                    checkedTrackColor =
-                                        NagMeTeal,
-                                    uncheckedThumbColor =
-                                        NagMeMutedText,
-                                    uncheckedTrackColor =
-                                        NagMeInfoCard
-                                )
-                        )
                     }
                 }
 

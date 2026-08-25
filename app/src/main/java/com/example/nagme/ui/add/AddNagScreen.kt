@@ -3,6 +3,8 @@ package com.example.nagme.ui.add
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,6 +58,9 @@ fun AddNagScreen(
 
     val context =
         LocalContext.current
+
+    val focusManager =
+        LocalFocusManager.current
 
     var text by remember {
         mutableStateOf("")
@@ -272,6 +280,15 @@ fun AddNagScreen(
             .background(
                 NagMeNavy
             )
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(
+                        requireUnconsumed = false,
+                        pass = PointerEventPass.Initial
+                    )
+                    focusManager.clearFocus()
+                }
+            }
             .verticalScroll(
                 rememberScrollState()
             )
@@ -1727,6 +1744,21 @@ private fun aiPersonalityOptions():
         AiPersonality(
             id = "foul_mouthed_fury",
             label = "Foul-Mouthed Fury"
+        ),
+
+        AiPersonality(
+            id = "the_tyrant",
+            label = "The Tyrant"
+        ),
+
+        AiPersonality(
+            id = "mafia_boss",
+            label = "Mafia Boss"
+        ),
+
+        AiPersonality(
+            id = "trump",
+            label = "Trump"
         )
     )
 }
