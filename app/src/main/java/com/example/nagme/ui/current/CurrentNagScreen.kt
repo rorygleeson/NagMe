@@ -1076,6 +1076,21 @@ private fun aiPersonalityOptions():
         AiPersonality(
             id = "foul_mouthed_fury",
             label = "Foul-Mouthed Fury"
+        ),
+
+        AiPersonality(
+            id = "the_tyrant",
+            label = "The Tyrant"
+        ),
+
+        AiPersonality(
+            id = "mafia_boss",
+            label = "Mafia Boss"
+        ),
+
+        AiPersonality(
+            id = "trump",
+            label = "Trump"
         )
     )
 }
