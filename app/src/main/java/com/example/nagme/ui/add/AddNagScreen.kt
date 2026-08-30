@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -280,6 +281,7 @@ fun AddNagScreen(
             .background(
                 NagMeNavy
             )
+            .navigationBarsPadding()
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(
@@ -1889,3 +1891,4 @@ private val NagMeDarkText =
 
 private val NagMeError =
     Color(0xFFFF7A8A)
+

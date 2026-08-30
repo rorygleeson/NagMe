@@ -1,5 +1,6 @@
 package com.example.nagme.ui.onboarding
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -29,9 +33,21 @@ fun NameOnboardingScreen(
         mutableStateOf("")
     }
 
+    val focusManager =
+        LocalFocusManager.current
+
+    val keyboardController =
+        LocalSoftwareKeyboardController.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
+            }
             .padding(32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -82,7 +98,12 @@ fun NameOnboardingScreen(
 
         Button(
             onClick = {
-                onNext(name.trim())
+                focusManager.clearFocus()
+                keyboardController?.hide()
+
+                onNext(
+                    name.trim()
+                )
             },
             enabled = name.isNotBlank(),
             modifier = Modifier.fillMaxWidth()

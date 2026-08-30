@@ -1,6 +1,8 @@
 package com.example.nagme.ui.settings
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -651,15 +653,66 @@ fun SettingsScreen(
                         Modifier.height(3.dp)
                 )
 
+                val versionName =
+                    context.packageManager
+                        .getPackageInfo(
+                            context.packageName,
+                            0
+                        )
+                        .versionName
+                        ?: "Unknown"
+
                 Text(
                     text =
-                        "Version 1.0",
+                        "Version $versionName",
                     color =
                         NagMeMutedText,
                     style =
                         MaterialTheme.typography
                             .bodySmall
                 )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(12.dp)
+                )
+
+                OutlinedButton(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    onClick = {
+
+                        val intent =
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(
+                                    "https://getnagme.com"
+                                )
+                            )
+
+                        context.startActivity(
+                            intent
+                        )
+                    },
+                    shape =
+                        RoundedCornerShape(
+                            16.dp
+                        ),
+                    colors =
+                        ButtonDefaults
+                            .outlinedButtonColors(
+                                contentColor =
+                                    NagMeTeal
+                            )
+                ) {
+
+                    Text(
+                        text =
+                            "VISIT GETNAGME.COM ↗",
+                        fontWeight =
+                            FontWeight.SemiBold
+                    )
+                }
             }
         }
     }

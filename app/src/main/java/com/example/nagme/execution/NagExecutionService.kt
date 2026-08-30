@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import com.example.nagme.data.Nag
 import com.example.nagme.data.NagDatabase
@@ -75,6 +76,11 @@ class NagExecutionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        Log.d(
+            "NagMeTiming",
+            "SERVICE_CREATED t=${SystemClock.elapsedRealtime()}"
+        )
 
         val database =
             NagDatabase.getInstance(
@@ -372,6 +378,13 @@ class NagExecutionService : Service() {
          */
         serviceScope.launch {
 
+            Log.d(
+                "NagMeTiming",
+                "NAG_PROCESS_START nagId=${item.nag.id} " +
+                        "aiEnabled=${item.nag.aiEnabled} " +
+                        "t=${SystemClock.elapsedRealtime()}"
+            )
+
             var spokenText =
                 item.nag.text
 
@@ -403,6 +416,15 @@ class NagExecutionService : Service() {
                             }
                             .takeLast(5)
 
+                    val aiRequestStartedAt =
+                        SystemClock.elapsedRealtime()
+
+                    Log.d(
+                        "NagMeTiming",
+                        "AI_REQUEST_START nagId=${item.nag.id} " +
+                                "t=$aiRequestStartedAt"
+                    )
+
                     val apiResult =
                         withTimeout(
                             AI_REQUEST_TIMEOUT_MS
@@ -423,6 +445,16 @@ class NagExecutionService : Service() {
                                     previousUtterances
                             )
                         }
+
+                    val aiRequestFinishedAt =
+                        SystemClock.elapsedRealtime()
+
+                    Log.d(
+                        "NagMeTiming",
+                        "AI_REQUEST_END nagId=${item.nag.id} " +
+                                "durationMs=${aiRequestFinishedAt - aiRequestStartedAt} " +
+                                "t=$aiRequestFinishedAt"
+                    )
 
                     if (
                         apiResult.success &&
@@ -517,6 +549,13 @@ class NagExecutionService : Service() {
                         item.nag.id
                     )
             }
+
+            Log.d(
+                "NagMeTiming",
+                "SPEECH_MANAGER_CALL nagId=${item.nag.id} " +
+                        "source=$utteranceSource " +
+                        "t=${SystemClock.elapsedRealtime()}"
+            )
 
             speechManager.speakNag(
                 text =

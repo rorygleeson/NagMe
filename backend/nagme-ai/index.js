@@ -219,12 +219,6 @@ ${originalText}
 PERSONALITY:
 ${personalityInstructions}
 
-CURRENT NAG NUMBER:
-${nagNumber}
-
-Use the nag number only as context for persistence.
-You may occasionally mention how many times the person has been nagged when it sounds natural or adds humour.
-Never say the number by itself without explaining what it refers to.
 
 ESCALATION STAGE:
 ${escalationStage}
@@ -233,24 +227,39 @@ ESCALATION GUIDE:
 - gentle: Friendly and light. The person may simply have forgotten.
 - persistent: More insistent, with some impatience that it is still not done.
 - firm: Direct and noticeably frustrated. Make it clear it needs doing now.
-- very_persistent: Maximum comic exasperation for the personality. Relentless and emphatic, but not threatening or abusive.
+- very_persistent: Strong comic exasperation. Relentless and emphatic, but concise, varied and natural. Never threatening or abusive.
 
 PREVIOUS SPOKEN NAGS:
 ${previousUtterancesText}
 
+These are provided only as examples of what has already been said. Use them to create something distinctly different.
+
 Generate exactly ONE new spoken nag.
+
 
 Rules:
 - The original task and what the person needs to do must always be clear in the spoken nag.
-- Do not closely repeat previous nags.
+- Fully embody the chosen personality and make it immediately recognisable.
+- Draw broadly from your own knowledge of the personality's distinctive voice, vocabulary, expressions, catchphrases, mannerisms, cultural references and humour; do not limit yourself to examples in the personality description.
+- Create fresh material in that style rather than relying on the same phrases every time.
+- Do not reuse the wording, jokes, catchphrases or main idea of recent nags.
+- Escalate by changing tactic, not by amplifying or repeating previous wording.
+- Keep every nag concise and natural, even at high escalation.
 - Match the personality and escalation stage.
-- Write like natural spoken conversation, not written prose.
+- Write for natural spoken delivery, not formal written prose.
+- Use contractions and casual spoken phrasing the way a real person would actually say it aloud.
+- Prefer forms such as "you'll", "you're", "that's", "that'll", "I'd", "you'd", "c'mon", "gonna" and "wanna" when they sound natural.
+- Spoken contractions may join nouns with auxiliary verbs where natural, for example "your boss'll be calling you soon" rather than "your boss will be calling you soon".
+- Do not overdo slang or phonetic spelling. The result must still be easy for Android text-to-speech to pronounce naturally.
 - Use 2 or 3 short sentences when it improves comedic timing and spoken rhythm.
 - Use full stops for natural pauses.
-- Use commas sparingly and contractions naturally.
+- Use commas sparingly.
 - Avoid long sentences and complicated punctuation.
 - Keep it concise: usually 15 to 35 words.
 - Do not include the user's name; the app handles it separately.
+- Output plain text only.
+- Never use Markdown or formatting symbols such as asterisks, underscores, hashes or backticks for emphasis.
+- Express emphasis through wording and punctuation only.
 - Return only the words to be spoken.
     `.trim();
 
@@ -300,7 +309,9 @@ Rules:
 
 
       generatedNagText =
-        geminiResponse.text?.trim();
+        geminiResponse.text
+          ?.replace(/[*_`#]/g, '')
+          .trim();
 
       if (!generatedNagText) {
         throw new Error(

@@ -5,8 +5,10 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.util.Log
 import com.example.nagme.settings.UserSettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,10 +68,27 @@ class SpeechManager(
     private var speaking = false
     private var initialising = false
 
+    /*
+     * Diagnostic only.
+     *
+     * Used to measure how long the TTS engine takes
+     * to initialise. Does not affect TTS behaviour.
+     */
+    private var ttsInitialisationStartedAt:
+            Long? = null
+
     fun speakNag(
         text: String,
         onComplete: () -> Unit
     ) {
+
+        Log.d(
+            "NagMeTiming",
+            "SPEAK_NAG_RECEIVED " +
+                    "ttsExists=${tts != null} " +
+                    "initialising=$initialising " +
+                    "t=${SystemClock.elapsedRealtime()}"
+        )
 
         scope.launch {
 
@@ -118,6 +137,15 @@ class SpeechManager(
 
             initialising = true
 
+            ttsInitialisationStartedAt =
+                SystemClock.elapsedRealtime()
+
+            Log.d(
+                "NagMeTiming",
+                "TTS_INIT_START " +
+                        "t=$ttsInitialisationStartedAt"
+            )
+
             initialiseGoogleTts()
         }
     }
@@ -129,6 +157,23 @@ class SpeechManager(
             { status ->
 
                 initialising = false
+
+                val ttsReadyAt =
+                    SystemClock.elapsedRealtime()
+
+                Log.d(
+                    "NagMeTiming",
+                    "TTS_INIT_RESULT status=$status " +
+                            "durationMs=" +
+                            (
+                                    ttsInitialisationStartedAt
+                                        ?.let {
+                                            ttsReadyAt - it
+                                        }
+                                        ?: -1
+                                    ) +
+                            " t=$ttsReadyAt"
+                )
 
                 if (
                     status ==
@@ -154,12 +199,25 @@ class SpeechManager(
 
         initialising = true
 
+        Log.d(
+            "NagMeTiming",
+            "TTS_FALLBACK_INIT_START " +
+                    "t=${SystemClock.elapsedRealtime()}"
+        )
+
         tts =
             TextToSpeech(
                 appContext
             ) { status ->
 
                 initialising = false
+
+                Log.d(
+                    "NagMeTiming",
+                    "TTS_FALLBACK_INIT_RESULT " +
+                            "status=$status " +
+                            "t=${SystemClock.elapsedRealtime()}"
+                )
 
                 if (
                     status ==
@@ -192,11 +250,26 @@ class SpeechManager(
                 override fun onStart(
                     utteranceId: String?
                 ) {
+
+                    Log.d(
+                        "NagMeTiming",
+                        "TTS_AUDIO_STARTED " +
+                                "utteranceId=$utteranceId " +
+                                "t=${SystemClock.elapsedRealtime()}"
+                    )
                 }
 
                 override fun onDone(
                     utteranceId: String?
                 ) {
+
+                    Log.d(
+                        "NagMeTiming",
+                        "TTS_AUDIO_DONE " +
+                                "utteranceId=$utteranceId " +
+                                "t=${SystemClock.elapsedRealtime()}"
+                    )
+
                     finishCurrentSpeech()
                 }
 
@@ -206,6 +279,14 @@ class SpeechManager(
                 override fun onError(
                     utteranceId: String?
                 ) {
+
+                    Log.d(
+                        "NagMeTiming",
+                        "TTS_AUDIO_ERROR " +
+                                "utteranceId=$utteranceId " +
+                                "t=${SystemClock.elapsedRealtime()}"
+                    )
+
                     finishCurrentSpeech()
                 }
             }
@@ -237,9 +318,21 @@ class SpeechManager(
              * allow existing media to duck rather than requiring
              * it to stop completely.
              */
+            Log.d(
+                "NagMeTiming",
+                "AUDIO_FOCUS_REQUEST " +
+                        "t=${SystemClock.elapsedRealtime()}"
+            )
+
             requestAudioFocus()
 
             speaking = true
+
+            Log.d(
+                "NagMeTiming",
+                "TTS_SPEAK_CALL " +
+                        "t=${SystemClock.elapsedRealtime()}"
+            )
 
             engine.speak(
                 request.spokenText,
