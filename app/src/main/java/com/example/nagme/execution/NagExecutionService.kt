@@ -378,6 +378,75 @@ class NagExecutionService : Service() {
          */
         serviceScope.launch {
 
+            /*
+             * CRITICAL STALE-QUEUE PROTECTION
+             *
+             * The occurrence may have been queued a moment ago,
+             * but the user can press DONE while the service is
+             * waiting to process it.
+             *
+             * Always re-read Room immediately before starting
+             * AI generation / notification / speech.
+             *
+             * If the occurrence is already DONE or EXPIRED,
+             * discard this queued speech item completely.
+             */
+            val latestOccurrence =
+                repository.getOccurrence(
+                    item.occurrence.id
+                )
+
+            if (
+                latestOccurrence == null ||
+                latestOccurrence.status ==
+                OccurrenceStatus.DONE ||
+                latestOccurrence.status ==
+                OccurrenceStatus.EXPIRED
+            ) {
+
+                Log.d(
+                    TAG,
+                    "Skipping queued Nag ${item.nag.id}. " +
+                            "Occurrence ${item.occurrence.id} " +
+                            "is no longer open. " +
+                            "status=${latestOccurrence?.status}"
+                )
+
+                speechQueue
+                    .removeFirstOrNull()
+
+                nagNotificationManager
+                    .cancel(
+                        item.nag.id
+                    )
+
+                processingSpeech =
+                    false
+
+                if (
+                    speechQueue
+                        .isNotEmpty()
+                ) {
+
+                    speakNext(
+                        startId =
+                            startId
+                    )
+
+                } else {
+
+                    scheduler
+                        .reschedule()
+
+                    stopServiceCleanly(
+                        startId =
+                            startId
+                    )
+                }
+
+                return@launch
+            }
+
             Log.d(
                 "NagMeTiming",
                 "NAG_PROCESS_START nagId=${item.nag.id} " +
@@ -510,6 +579,72 @@ class NagExecutionService : Service() {
              * From this point on, spokenText is the exact text
              * NagMe will say and later store in nag_utterances.
              */
+
+            /*
+             * FINAL PRE-SPEECH STATE CHECK
+             *
+             * AI generation may have taken several seconds.
+             * The user could have pressed DONE while we were
+             * waiting for the AI response.
+             *
+             * Re-read Room immediately before notification/TTS.
+             * If the occurrence is no longer open, do not speak it.
+             */
+            val occurrenceBeforeSpeech =
+                repository.getOccurrence(
+                    item.occurrence.id
+                )
+
+            if (
+                occurrenceBeforeSpeech == null ||
+                occurrenceBeforeSpeech.status ==
+                OccurrenceStatus.DONE ||
+                occurrenceBeforeSpeech.status ==
+                OccurrenceStatus.EXPIRED
+            ) {
+
+                Log.d(
+                    TAG,
+                    "Cancelling Nag ${item.nag.id} before speech. " +
+                            "Occurrence ${item.occurrence.id} " +
+                            "is no longer open. " +
+                            "status=${occurrenceBeforeSpeech?.status}"
+                )
+
+                speechQueue
+                    .removeFirstOrNull()
+
+                nagNotificationManager
+                    .cancel(
+                        item.nag.id
+                    )
+
+                processingSpeech =
+                    false
+
+                if (
+                    speechQueue
+                        .isNotEmpty()
+                ) {
+
+                    speakNext(
+                        startId =
+                            startId
+                    )
+
+                } else {
+
+                    scheduler
+                        .reschedule()
+
+                    stopServiceCleanly(
+                        startId =
+                            startId
+                    )
+                }
+
+                return@launch
+            }
 
             Log.d(
                 TAG,
