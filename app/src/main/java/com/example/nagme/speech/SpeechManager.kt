@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -41,8 +42,7 @@ class SpeechManager(
 
     fun speakNag(
         text: String,
-        onComplete: () -> Unit,
-        onFailure: () -> Unit = {}
+        onComplete: () -> Unit
     ) {
         Log.d(
             TAG_TIMING,
@@ -58,8 +58,7 @@ class SpeechManager(
                     SpeechRequest(
                         spokenText = spokenText,
                         preferredVoiceName = settings.defaultVoiceName,
-                        onComplete = onComplete,
-                        onFailure = onFailure
+                        onComplete = onComplete
                     )
                 )
             }
@@ -118,7 +117,7 @@ class SpeechManager(
                 configureTts()
                 speakNext()
             } else {
-                failCurrentSpeech("TTS initialisation failed")
+                retryCurrentSpeech("TTS initialisation failed")
             }
         }
     }
@@ -140,7 +139,7 @@ class SpeechManager(
                 @Deprecated("Deprecated by Android")
                 override fun onError(utteranceId: String?) {
                     Log.e(TAG_TIMING, "TTS_AUDIO_ERROR utteranceId=$utteranceId t=${SystemClock.elapsedRealtime()}")
-                    retryOrFailCurrentSpeech("TTS onError callback")
+                    retryCurrentSpeech("TTS onError callback")
                 }
 
                 override fun onError(utteranceId: String?, errorCode: Int) {
@@ -148,7 +147,7 @@ class SpeechManager(
                         TAG_TIMING,
                         "TTS_AUDIO_ERROR utteranceId=$utteranceId errorCode=$errorCode t=${SystemClock.elapsedRealtime()}"
                     )
-                    retryOrFailCurrentSpeech("TTS onError code=$errorCode")
+                    retryCurrentSpeech("TTS onError code=$errorCode")
                 }
             }
         )
@@ -184,33 +183,30 @@ class SpeechManager(
             Log.d(TAG_TIMING, "TTS_SPEAK_RESULT utteranceId=$utteranceId result=$speakResult")
 
             if (speakResult == TextToSpeech.ERROR) {
-                retryOrFailCurrentSpeech("TextToSpeech.speak returned ERROR")
+                retryCurrentSpeech("TextToSpeech.speak returned ERROR")
             }
         }
     }
 
-    private fun retryOrFailCurrentSpeech(reason: String) {
+    private fun retryCurrentSpeech(reason: String) {
         synchronized(this) {
-            if (!speaking) return
-
             abandonAudioFocus()
             speaking = false
 
-            val request = synchronized(queue) { queue.firstOrNull() }
-            if (request == null) return
+            val request = synchronized(queue) { queue.firstOrNull() } ?: return
+            request.attempt += 1
 
-            if (request.attempt < MAX_TTS_RETRIES) {
-                request.attempt += 1
-                Log.w(
-                    TAG_TIMING,
-                    "TTS_RETRY reason=$reason retry=${request.attempt}/$MAX_TTS_RETRIES t=${SystemClock.elapsedRealtime()}"
-                )
+            Log.w(
+                TAG_TIMING,
+                "TTS_RETRY reason=$reason attempt=${request.attempt} t=${SystemClock.elapsedRealtime()}"
+            )
 
-                shutdownEngineOnly()
-                initialising = false
+            shutdownEngineOnly()
+            initialising = false
+
+            scope.launch {
+                delay(TTS_RETRY_DELAY_MS)
                 ensureTtsReady()
-            } else {
-                failCurrentSpeech(reason)
             }
         }
     }
@@ -224,22 +220,9 @@ class SpeechManager(
             speaking = false
         }
 
+        // This is deliberately the ONLY place that reports completion.
+        // TTS errors never mark a Nag as spoken or advance its schedule.
         completed?.onComplete?.invoke()
-        speakNext()
-    }
-
-    private fun failCurrentSpeech(reason: String) {
-        val failed: SpeechRequest?
-        synchronized(this) {
-            abandonAudioFocus()
-            failed = synchronized(queue) { queue.removeFirstOrNull() }
-            speaking = false
-            initialising = false
-            shutdownEngineOnly()
-        }
-
-        Log.e(TAG_TIMING, "TTS_FINAL_FAILURE reason=$reason t=${SystemClock.elapsedRealtime()}")
-        failed?.onFailure?.invoke()
         speakNext()
     }
 
@@ -295,13 +278,12 @@ class SpeechManager(
         val spokenText: String,
         val preferredVoiceName: String?,
         val onComplete: () -> Unit,
-        val onFailure: () -> Unit,
         var attempt: Int = 0
     )
 
     companion object {
         private const val TAG_TIMING = "NagMeTiming"
         private const val GOOGLE_TTS_ENGINE = "com.google.android.tts"
-        private const val MAX_TTS_RETRIES = 1
+        private const val TTS_RETRY_DELAY_MS = 1_500L
     }
 }
