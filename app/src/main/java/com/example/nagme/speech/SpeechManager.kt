@@ -5,6 +5,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.os.PowerManager
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -25,6 +26,14 @@ class SpeechManager(
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+
+    private val wakeLock = powerManager.newWakeLock(
+        PowerManager.PARTIAL_WAKE_LOCK,
+        "NagMe:TtsSpeech"
+    ).apply {
+        setReferenceCounted(false)
+    }
 
     private val speechAudioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -48,6 +57,8 @@ class SpeechManager(
             TAG_TIMING,
             "SPEAK_NAG_RECEIVED ttsExists=${tts != null} initialising=$initialising t=${SystemClock.elapsedRealtime()}"
         )
+
+        holdCpuAwake()
 
         scope.launch {
             val settings = settingsRepository.settings.first()
@@ -75,6 +86,7 @@ class SpeechManager(
             }
             if (initialising) return
 
+            holdCpuAwake()
             initialising = true
             ttsInitialisationStartedAt = SystemClock.elapsedRealtime()
             Log.d(TAG_TIMING, "TTS_INIT_START t=$ttsInitialisationStartedAt")
@@ -157,9 +169,13 @@ class SpeechManager(
         synchronized(this) {
             if (speaking) return
 
-            val request = synchronized(queue) { queue.firstOrNull() } ?: return
+            val request = synchronized(queue) { queue.firstOrNull() } ?: run {
+                releaseCpuWakeLock()
+                return
+            }
             val engine = tts ?: return
 
+            holdCpuAwake()
             applyPreferredVoice(engine, request.preferredVoiceName)
 
             Log.d(TAG_TIMING, "AUDIO_FOCUS_REQUEST t=${SystemClock.elapsedRealtime()}")
@@ -193,7 +209,10 @@ class SpeechManager(
             abandonAudioFocus()
             speaking = false
 
-            val request = synchronized(queue) { queue.firstOrNull() } ?: return
+            val request = synchronized(queue) { queue.firstOrNull() } ?: run {
+                releaseCpuWakeLock()
+                return
+            }
             request.attempt += 1
 
             Log.w(
@@ -203,6 +222,7 @@ class SpeechManager(
 
             shutdownEngineOnly()
             initialising = false
+            holdCpuAwake()
 
             scope.launch {
                 delay(TTS_RETRY_DELAY_MS)
@@ -223,7 +243,26 @@ class SpeechManager(
         // This is deliberately the ONLY place that reports completion.
         // TTS errors never mark a Nag as spoken or advance its schedule.
         completed?.onComplete?.invoke()
+
+        if (synchronized(queue) { queue.isEmpty() }) {
+            releaseCpuWakeLock()
+        }
+
         speakNext()
+    }
+
+    private fun holdCpuAwake() {
+        if (!wakeLock.isHeld) {
+            wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS)
+            Log.d(TAG_TIMING, "WAKE_LOCK_ACQUIRED t=${SystemClock.elapsedRealtime()}")
+        }
+    }
+
+    private fun releaseCpuWakeLock() {
+        if (wakeLock.isHeld) {
+            wakeLock.release()
+            Log.d(TAG_TIMING, "WAKE_LOCK_RELEASED t=${SystemClock.elapsedRealtime()}")
+        }
     }
 
     private fun requestAudioFocus(): Int {
@@ -272,6 +311,7 @@ class SpeechManager(
         synchronized(queue) { queue.clear() }
         speaking = false
         initialising = false
+        releaseCpuWakeLock()
     }
 
     private data class SpeechRequest(
@@ -285,5 +325,6 @@ class SpeechManager(
         private const val TAG_TIMING = "NagMeTiming"
         private const val GOOGLE_TTS_ENGINE = "com.google.android.tts"
         private const val TTS_RETRY_DELAY_MS = 1_500L
+        private const val WAKE_LOCK_TIMEOUT_MS = 120_000L
     }
 }
